@@ -1,0 +1,182 @@
+<!-- Custom head content -->
+<link rel="stylesheet" href="{{ '/assets/css/custom.css' | relative_url }}">
+<link rel="stylesheet" href="{{ '/assets/css/custom-green.css' | relative_url }}">
+<link rel="stylesheet" href="{{ '/assets/css/footer-spacing.css' | relative_url }}">
+<link rel="stylesheet" href="{{ '/assets/css/button-styles.css' | relative_url }}">
+<link rel="stylesheet" href="{{ '/assets/css/table-styles.css' | relative_url }}">
+
+<style>
+  /* Import Outfit font */
+  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap');
+
+  /* Custom styles to adjust the sidebar width */
+  .side-bar {
+    width: 100% !important; /* Full width on mobile */
+    min-width: 100% !important;
+    max-width: 100% !important;
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+  }
+
+  @media (min-width: 50rem) {
+    .side-bar {
+      width: 20% !important;
+      min-width: 220px !important;
+      max-width: 280px !important;
+    }
+    
+    .main {
+      width: 80% !important;
+      margin-left: 20% !important;
+    }
+  }
+
+  @media (min-width: 66.5rem) {
+    .side-bar {
+      width: 18% !important;
+      min-width: 220px !important;
+      max-width: 280px !important;
+    }
+    
+    .main {
+      width: 82% !important;
+      margin-left: 18% !important;
+    }
+  }
+  
+  /* Make content responsive */
+  .main-content-wrap {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-left: 2rem !important;
+    padding-right: 2rem !important;
+  }
+  
+  @media (min-width: 66.5rem) {
+    .main-content-wrap {
+      max-width: 90% !important;
+      margin: 0 auto !important;
+    }
+  }
+  
+  @media (min-width: 90rem) {
+    .main-content-wrap {
+      max-width: 85% !important;
+    }
+  }
+
+  /* Sidebar navigation styling based on best practices */
+  .nav-list .nav-list-item .nav-list-link {
+    /* Typography improvements */
+    font-size: 1.1875rem !important; /* Larger font size as requested */
+    font-weight: 400 !important; /* Regular weight for better readability */
+    line-height: 1.4 !important; /* Improved line height for readability */
+    letter-spacing: -0.01em !important; /* Slightly tighter letter spacing */
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+    
+    /* Spacing improvements */
+    padding: 0.4rem 0.5rem !important; /* Balanced padding */
+    margin: 0.1rem 0 !important; /* Slight margin between items */
+    padding-left: 1.5rem !important; /* Move text to the right */
+    text-align: left !important; /* Align text to the left */
+    
+    /* Visual improvements */
+    border-radius: 4px !important; /* Subtle rounding of hover/active states */
+    transition: all 0.15s ease-in-out !important; /* Smooth transitions */
+  }
+
+  /* Active and hover states */
+  .nav-list .nav-list-item .nav-list-link.active {
+    font-weight: 500 !important; /* Medium weight for active items */
+  }
+
+  /* Expander buttons */
+  .nav-list .nav-list-item .nav-list-expander {
+    padding: 0.4rem 0.5rem !important;
+    font-size: 1.1875rem !important;
+    opacity: 0.8 !important; /* Slightly more subtle */
+    transition: all 0.15s ease-in-out !important;
+  }
+  
+  /* Nested items - adjust indentation */
+  .nav-list .nav-list-item .nav-list .nav-list-item {
+    padding-left: 0.75rem !important;
+  }
+  
+  .nav-list .nav-list-item .nav-list .nav-list-item .nav-list-link {
+    font-size: 1.1rem !important; /* Slightly smaller than parent items */
+    padding: 0.3rem 0.5rem !important; /* Slightly less padding */
+    padding-left: 2rem !important; /* Additional indentation for nested items */
+  }
+  
+  /* Category headings */
+  .nav-category {
+    font-weight: 600 !important; /* Semi-bold for category headings */
+    letter-spacing: 0.02em !important; /* Slightly looser for headings */
+    text-transform: uppercase !important; /* Uppercase for distinction */
+    font-size: 0.8rem !important; /* Smaller size for category labels */
+    opacity: 0.7 !important; /* Slightly muted */
+    padding: 0.5rem 0.5rem 0.2rem !important;
+    padding-left: 1.5rem !important; /* Match the indentation of nav items */
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+  }
+
+  /* Style the site title with Outfit font */
+  .site-title {
+    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+    font-weight: 600 !important;
+  }
+
+  /* Improve mobile navigation */
+  @media (max-width: 50rem) {
+    .site-nav, .site-header, .site-footer {
+      width: 100% !important;
+    }
+
+    .site-nav .nav-list {
+      padding-left: 0.5rem !important;
+      padding-right: 0.5rem !important;
+    }
+
+    .nav-list .nav-list-item .nav-list-link {
+      padding-left: 1rem !important;
+    }
+
+    .nav-list .nav-list-item .nav-list .nav-list-item .nav-list-link {
+      padding-left: 1.5rem !important;
+    }
+    
+    .main-content-wrap {
+      padding-left: 1rem !important;
+      padding-right: 1rem !important;
+    }
+  }
+  
+  /* Make sure tables and code blocks don't overflow */
+  pre {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+  
+  /* Make images responsive */
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+  
+  /* Hide "Back to top" link */
+  a[href="#top"] {
+    display: none !important;
+  }
+  
+  /* Hide "This site uses Just the Docs" footer */
+  .site-footer > p:last-child,
+  .site-footer p a[href="https://just-the-docs.github.io/just-the-docs/"],
+  .site-footer p:has(a[href="https://just-the-docs.github.io/just-the-docs/"]) {
+    display: none !important;
+  }
+  
+  /* Alternative approach to hide the Just the Docs footer */
+  .site-footer p:last-of-type {
+    display: none !important;
+  }
+</style>

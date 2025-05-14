@@ -1,0 +1,32 @@
+// Green color scheme for Just the Docs
+
+// Define green color variables
+$green-000: #e3f2e3;
+$green-100: #c1e0c1;
+$green-200: #9fcf9f;
+$green-300: #7dbd7d;
+$green-400: #5bab5b;
+$green-500: #3a993a;
+$green-600: #2e7d2e;
+$green-700: #236123;
+$green-800: #184518;
+$green-900: #0d280d;
+
+// Override the default color variables with green
+$link-color: $green-600;
+$btn-primary-color: $green-600;
+$base-button-color: $green-100;
+$code-background-color: $green-000;
+$feedback-color: $green-100;
+$sidebar-color: $green-000;
+$search-background-color: $green-000;
+$table-background-color: $green-100;
+$feedback-color: $green-100;
+
+// Override other colors
+$body-background-color: #fff;
+$body-heading-color: $green-900;
+$body-text-color: $green-800;
+$nav-child-link-color: $green-600;
+$search-result-preview-color: $green-700;
+$border-color: $green-200;

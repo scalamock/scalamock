@@ -1,0 +1,46 @@
+.main {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+
+@media (min-width: 50rem) {
+  .side-bar {
+    width: auto !important;
+    min-width: 220px !important;
+    max-width: 280px !important;
+  }
+
+  .main {
+    margin-left: 280px !important;
+  }
+}
+
+@media (min-width: 66.5rem) {
+  .side-bar {
+    width: auto !important;
+    min-width: 220px !important;
+    max-width: 280px !important;
+  }
+
+  .main {
+    margin-left: 280px !important;
+  }
+}
+
+/* Make the navigation links take up less space */
+.nav-list .nav-list-item .nav-list-link {
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
+}
+
+/* Reduce padding in nested navigation */
+.nav-list .nav-list-item .nav-list-expander {
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
+}
+
+/* Adjust spacing for nested items */
+.nav-list .nav-list-item .nav-list .nav-list-item {
+  padding-left: 0.75rem !important;
+}
