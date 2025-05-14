@@ -103,7 +103,7 @@ we are combining these two concepts into one. So for us - `Stub` also records so
 
 ## Mocks vs Stubs
 
-**Mocks** and **Stubs** can be both used in same manned.
+**Mocks** and **Stubs** can both be used in the same manner.
 
 They both allow you to set a result and they both allow you to verify the behaviour - the difference is **how**.
 
@@ -123,7 +123,7 @@ For stubs:
 
 ## Scalamock 7
 
-scalamock 7 stubs project tries to handle common pitfalls of mocking and offers only simple set of features.
+scalamock 7 stubs project tries to handle common pitfalls of mocking and offers only a simple set of features.
 
 1. Stub generation
 2. Set method returned result
