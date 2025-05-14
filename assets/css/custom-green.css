@@ -1,0 +1,211 @@
+/* Import Outfit font */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap');
+
+/* Define emerald green color palette */
+:root {
+  --emerald-50: #ecfdf5;
+  --emerald-100: #d1fae5;
+  --emerald-200: #a7f3d0;
+  --emerald-300: #6ee7b7;
+  --emerald-400: #34d399;
+  --emerald-500: #10b981;
+  --emerald-600: #059669;
+  --emerald-700: #047857;
+  --emerald-800: #065f46;
+  --emerald-900: #064e3b;
+  --emerald-950: #022c22;
+}
+
+/* Override default purple with emerald green */
+:root {
+  --link-color: var(--emerald-900) !important;
+  --btn-primary-color: var(--emerald-800) !important;
+  --base-button-color: var(--emerald-100) !important;
+  --code-background-color: var(--emerald-50) !important;
+  --feedback-color: var(--emerald-100) !important;
+  --sidebar-color: #f8fbf9 !important;
+  --search-background-color: var(--emerald-50) !important;
+  --table-background-color: var(--emerald-100) !important;
+}
+
+/* Keep emerald green for main content links */
+a {
+  color: var(--emerald-800) !important;
+}
+
+.btn-primary {
+  background-color: var(--emerald-600) !important;
+}
+
+.search-input:focus + .search-label .search-icon {
+  color: var(--emerald-800) !important;
+}
+
+/* Apply Outfit font to the entire sidebar */
+.side-bar {
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+}
+
+/* Change nav sidebar links to emerald green and Outfit font */
+.nav-list .nav-list-item .nav-list-link {
+  color: var(--emerald-900) !important;
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+  font-weight: 400 !important;
+}
+
+.nav-list .nav-list-item .nav-list-link:hover, 
+.nav-list .nav-list-item .nav-list-link.active {
+  background-color: var(--emerald-50) !important;
+  color: var(--emerald-900) !important;
+}
+
+/* Style active links with medium weight */
+.nav-list .nav-list-item .nav-list-link.active {
+  font-weight: 500 !important;
+}
+
+/* Style the site title with Outfit font */
+.site-title {
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+  font-weight: 600 !important;
+  color: var(--emerald-900) !important;
+}
+
+.nav-list .nav-list-item .nav-list-expander:hover {
+  background-color: var(--emerald-50) !important;
+}
+
+.site-button:hover {
+  background-color: var(--emerald-50) !important;
+}
+
+.site-button.nav-open {
+  background-color: var(--emerald-50) !important;
+}
+
+.search-active .search-input {
+  border-color: var(--emerald-900) !important;
+}
+
+.main-content a {
+  text-decoration-color: var(--emerald-900) !important;
+}
+
+.main-content a:hover {
+  text-decoration-color: var(--emerald-900) !important;
+}
+
+.site-footer a {
+  color: var(--emerald-900) !important;
+}
+
+/* Fix button text color */
+.btn {
+  color: #27262b !important;
+}
+
+.btn-primary {
+  color: #ffffff !important;
+}
+
+/* Fix mobile burger menu and other remaining purple elements */
+.site-button {
+  color: var(--emerald-700) !important;
+}
+
+.site-button:hover,
+.site-button:focus {
+  background-color: var(--emerald-50) !important;
+}
+
+.site-button.nav-open {
+  background-color: var(--emerald-50) !important;
+}
+
+/* Fix any other purple elements */
+.nav-list .nav-list-item .nav-list-expander {
+  color: var(--emerald-700) !important;
+}
+
+.search-input-wrap .search-icon {
+  color: var(--emerald-700) !important;
+}
+
+.search-result-highlight {
+  color: var(--emerald-700) !important;
+  background-color: var(--emerald-100) !important;
+}
+
+.search-active .search-input {
+  border-color: var(--emerald-700) !important;
+}
+
+/* Fix any SVG icons */
+.main-content .anchor-heading svg {
+  color: var(--emerald-700) !important;
+}
+
+/* Fix copy button */
+.copy-button {
+  color: var(--emerald-700) !important;
+}
+
+.copy-button:hover {
+  background-color: var(--emerald-50) !important;
+}
+
+/* More specific selectors for the burger menu */
+.site-button svg {
+  color: var(--emerald-700) !important;
+  fill: var(--emerald-700) !important;
+}
+
+.site-button svg path {
+  fill: var(--emerald-700) !important;
+  stroke: var(--emerald-700) !important;
+}
+
+/* Target the specific burger menu icon */
+.site-button .icon {
+  color: var(--emerald-700) !important;
+}
+
+/* Override any inline styles */
+[class^="icon-"], [class*=" icon-"] {
+  color: var(--emerald-700) !important;
+  fill: var(--emerald-700) !important;
+}
+
+/* Target all SVG elements in the header */
+.site-header svg {
+  color: var(--emerald-700) !important;
+  fill: var(--emerald-700) !important;
+}
+
+/* Extremely specific selector for the burger icon */
+button.site-button.js-main-nav-trigger svg.icon {
+  color: var(--emerald-700) !important;
+  fill: var(--emerald-700) !important;
+}
+
+/* Target all icons in the site */
+.icon {
+  color: var(--emerald-700) !important;
+  fill: var(--emerald-700) !important;
+}
+
+/* Hide "Back to top" link on the homepage */
+.main-content > .home-content + hr + p > a[href="#top"] {
+  display: none !important;
+}
+
+/* Alternative selector if the above doesn't work */
+body.homepage .main-content a[href="#top"],
+.main-content > p:last-child > a[href="#top"] {
+  display: none !important;
+}
+
+/* Another approach - hide it on pages with permalink / */
+.main-content[data-page-root="/"] a[href="#top"] {
+  display: none !important;
+}

@@ -1,0 +1,33 @@
+/* Custom table styles */
+table {
+  display: table !important;
+  width: auto !important;
+  max-width: 80% !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  overflow-x: auto !important;
+  border-collapse: collapse !important;
+}
+
+/* Style table headers */
+table th {
+  background-color: #f5f6fa !important;
+  text-align: center !important;
+  padding: 0.75rem !important;
+}
+
+/* Style table cells */
+table td {
+  padding: 0.75rem !important;
+  text-align: center !important;
+}
+
+/* Responsive tables on small screens */
+@media (max-width: 50rem) {
+  table {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+  }
+}

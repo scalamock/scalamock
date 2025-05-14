@@ -1,0 +1,65 @@
+/* Footer spacing styles */
+
+/* Add more space around the footer but reduce internal padding */
+.main-content > footer {
+  text-align: center !important;
+}
+
+/* Style the footer text with less padding */
+.main-content > footer p {
+  margin: 0 auto !important;
+  max-width: 80% !important;
+  padding: 0.5rem 0.75rem !important; /* Reduced padding */
+  border-radius: 6px !important;
+  background-color: #ecfdf5 !important; /* Light emerald background */
+  box-shadow: 0 2px 8px rgba(10, 185, 129, 0.08) !important; /* Emerald shadow */
+  font-size: 0.9rem !important;
+  color: #065f46 !important; /* Emerald text color */
+  line-height: 1.5 !important; /* Slightly tighter line height */
+  transition: all 0.3s ease !important;
+  border: 1px solid rgba(16, 185, 129, 0.1) !important; /* Subtle emerald border */
+}
+
+/* Add hover effect */
+.main-content > footer p:hover {
+  box-shadow: 0 3px 12px rgba(10, 185, 129, 0.12) !important;
+  transform: translateY(-2px) !important;
+  background-color: #d1fae5 !important; /* Slightly darker on hover */
+}
+
+/* Add responsive spacing */
+@media (min-width: 50rem) {
+  .main-content > footer {
+    margin-top: 1.5rem !important;
+    margin-bottom: 1.5rem !important;
+  }
+
+  .main-content > footer p {
+    max-width: 70% !important;
+  }
+}
+
+@media (min-width: 66.5rem) {
+  .main-content > footer p {
+    max-width: 60% !important;
+  }
+}
+
+@media (min-width: 90rem) {
+  .main-content > footer p {
+    max-width: 50% !important;
+  }
+}
+
+/* Fix for mobile */
+@media (max-width: 50rem) {
+  .main-content > footer {
+    margin-top: 2rem !important;
+    margin-bottom: 1.5rem !important;
+  }
+
+  .main-content > footer p {
+    max-width: 90% !important;
+    padding: 0.4rem 0.5rem !important;
+  }
+}
