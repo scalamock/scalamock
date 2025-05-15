@@ -21,6 +21,10 @@ It provides:
 
 `StubbedIOMethod` is a subtype of `StubbedMethod`, which adds some convenient methods returning IO.
 
+{: .important }
+> For method without arguments returning IO - you can omit creating a function from `()`.
+> So instead of `() => myObj.myMethod` just use `myObj.myMethod`
+
 ### succeedsWith and raisesErrorWith
 
 1. **succeedsWith** - returns IO with a successful value
