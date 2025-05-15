@@ -22,6 +22,10 @@ It provides:
 
 `StubbedZIOMethod` is a subtype of `StubbedMethod`, which adds some convenient methods returning ZIO.
 
+{: .important }
+> For method without arguments returning ZIO - you can omit creating a function from `()`.
+> So instead of `() => myObj.myMethod` just use `myObj.myMethod` 
+
 ### succeedsWith, failWith, diesWith
 
 1. **succeedsWith** - returns ZIO with a successful value
