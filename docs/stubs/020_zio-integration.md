@@ -26,10 +26,10 @@ It provides:
 > For method without arguments returning ZIO - you can omit creating a function from `()`.
 > So instead of `() => myObj.myMethod` just use `myObj.myMethod` 
 
-### succeedsWith, failWith, diesWith
+### succeedsWith, failsWith, diesWith
 
 1. **succeedsWith** - returns ZIO with a successful value
-2. **failWith** - returns ZIO with a failed value
+2. **failsWith** - returns ZIO with a failed value
 3. **diesWith** - returns ZIO with a defect
 
 All these methods return ZIO itself for convenient use in **for comprehensions**.
@@ -64,11 +64,11 @@ class MySuite extends ZIOSpecDefault, ZIOStubs:
           result <- userService.findUser(userId)
         } yield assertTrue(result == user)
       },
-      test("failWith") {
+      test("failsWith") {
         val userService = stub[UserService]
 
         for {
-          _ <- userService.findUser.failWith(None)
+          _ <- userService.findUser.failsWith(None)
           result <- userService.findUser(userId).either
         } yield assertTrue(result == Left(None))
       },
