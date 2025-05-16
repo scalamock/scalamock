@@ -38,7 +38,7 @@ These methods are the default way of setting a result.
 
 ```scala
 //> using dep dev.zio::zio:2.1.17
-//> using test.dep org.scalamock::scalamock:7.3.2
+//> using test.dep org.scalamock::scalamock-zio:7.3.2
 //> using test.dep dev.zio::zio-test:2.1.17
 
 import org.scalamock.stubs.ZIOStubs
@@ -95,7 +95,7 @@ If above methods are not enough - you can use:
 
 ```scala
 //> using dep dev.zio::zio:2.1.17
-//> using test.dep org.scalamock::scalamock:7.3.2
+//> using test.dep org.scalamock::scalamock-zio:7.3.2
 //> using test.dep dev.zio::zio-test:2.1.17
 
 import org.scalamock.stubs.ZIOStubs

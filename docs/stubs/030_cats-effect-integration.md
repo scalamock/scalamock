@@ -9,7 +9,7 @@ permalink: /stubs/cats-effect/
 
 # cats-effect integration
 
-To use cats-effect integration - your suite should mixin `org.scalamock.stubs.CatsEffectStubs`
+To use cats-effect integration - your suite should mixin `org.g.stubs.CatsEffectStubs`
 
 Dependency can be found on [Home Page](/)
 
@@ -36,7 +36,7 @@ These methods are the default way of setting results.
 
 ```scala
 //> using dep org.typelevel::cats-effect:3.6.1
-//> using test.dep org.scalamock::scalamock:7.3.2
+//> using test.dep org.scalamock::scalamock-cats-effect:7.3.2
 //> using test.dep org.typelevel::munit-cats-effect:2.1.0
 
 import org.scalamock.stubs.CatsEffectStubs
@@ -75,7 +75,7 @@ If above methods are not enough - you can use:
 
 ```scala
 //> using dep org.typelevel::cats-effect:3.6.1
-//> using test.dep org.scalamock::scalamock:7.3.2
+//> using test.dep org.scalamock::scalamock-cats-effect:7.3.2
 //> using test.dep org.typelevel::munit-cats-effect:2.1.0
 
 import org.scalamock.stubs.CatsEffectStubs
