@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Known Issues
+title: Known issues
 nav_order: 7
 permalink: /known-issues/
 has_children: true
