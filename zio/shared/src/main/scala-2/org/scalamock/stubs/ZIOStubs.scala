@@ -1,9 +1,11 @@
 package org.scalamock.stubs
 
 import zio._
+
 import scala.language.experimental.macros
 import scala.language.implicitConversions
-import org.scalamock.stubs.internal.ZIOStubMakerImpl
+import org.scalamock.stubs.internal._
+
 import scala.concurrent.Future
 
 trait ZIOStubs extends StubsBase {
@@ -16,6 +18,12 @@ trait ZIOStubs extends StubsBase {
   }
 
   final implicit val stubIO: ZIOStubIO = new ZIOStubIO()
+
+  def stubZIO[T](implicit
+                 createdStubs: CreatedStubs,
+                 stubUniqueIndexGenerator: StubUniqueIndexGenerator,
+                 tag: Tag[Stub[T]]
+  ): StubZIO[T] = macro StubZIOMacroImpl.stubZIO[T]
 
   implicit def stubbed[R](f: => R)(implicit ev: R <:< IO[Any, Any]): StubbedZIOMethod0[R] =
     macro ZIOStubMakerImpl.toStubbedMethod00[R]
