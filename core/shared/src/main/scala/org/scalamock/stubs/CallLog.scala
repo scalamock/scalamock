@@ -20,6 +20,8 @@
 
 package org.scalamock.stubs
 
+import org.scalamock.stubs.CallLog.EffectfulAPI
+
 import java.util.concurrent.atomic.AtomicReference
 
 /** Allows to check order of executed methods. Should be declared before stub generation  */
@@ -27,9 +29,15 @@ class CallLog {
   /** Use it only for debug purposes. String representation of called methods can change */
   override def toString: String = internal.calledMethods.mkString("\n")
 
+  def effectfulAPI(io: StubIO): EffectfulAPI[io.F] = new EffectfulAPI[io.F] {
+    override def calledMethods: io.F[Nothing, Seq[String]] = io.succeed(internal.calledMethods)
+
+    override def write(methodName:  String): io.F[Nothing, Unit] = io.succeed(internal.write(methodName))
+  }
+  
   /** Consider not using this internal API. It can change in the future */
   object internal {
-    private val methodsRef: AtomicReference[List[String]] = new AtomicReference(Nil)
+    private lazy val methodsRef: AtomicReference[List[String]] = new AtomicReference(Nil)
 
     def write(methodName: String): Unit = {
       methodsRef.getAndUpdate(methodName :: _)
@@ -45,4 +53,10 @@ class CallLog {
 
 object CallLog {
   def apply(): CallLog = new CallLog()
+  
+  trait EffectfulAPI[F[_, _]] {
+    def write(methodName: String): F[Nothing, Unit]
+    
+    def calledMethods: F[Nothing, Seq[String]]
+  }
 }

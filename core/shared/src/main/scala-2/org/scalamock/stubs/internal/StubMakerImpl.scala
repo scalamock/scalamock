@@ -22,7 +22,7 @@ package org.scalamock.stubs.internal
 
 import org.scalamock.context.MockContext
 import org.scalamock.util.MacroAdapter.Context
-import org.scalamock.stubs.{StubbedMethod, StubbedMethod0, Stub}
+import org.scalamock.stubs.{StubbedMethod, Stub, StubbedMethod0}
 
 private[scalamock]
 object StubMakerImpl {
@@ -32,7 +32,7 @@ object StubMakerImpl {
     stubUniqueIndexGenerator: c.Expr[StubUniqueIndexGenerator]
   ): c.Expr[Stub[T]] = {
     val maker = new StubMaker[c.type](c)
-    new maker.StubMakerInner[T](createdStubs, stubUniqueIndexGenerator).make
+    new maker.StubMakerInner[T](createdStubs, stubUniqueIndexGenerator, maker.summonCallLog).make
   }
 
   def toStubbedMethod0[R: c.WeakTypeTag](c: Context)(f: c.Expr[R]): c.Expr[StubbedMethod0[R]] =

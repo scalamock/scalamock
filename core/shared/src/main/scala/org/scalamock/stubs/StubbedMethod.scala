@@ -20,6 +20,8 @@
 
 package org.scalamock.stubs
 
+import org.scalamock.stubs.internal.StubsOrderAlg
+
 import java.util.concurrent.atomic.AtomicReference
 
 /**
@@ -28,7 +30,7 @@ import java.util.concurrent.atomic.AtomicReference
  * [[Stubs]] interface provides implicit conversion from selected method to StubbedMethod0
  *
  * You need to explicitly convert it to a function () => R
- * 
+ *
  * {{{
  *   trait Foo:
  *     def foo0: Int
@@ -53,18 +55,18 @@ trait StubbedMethod0[R] extends StubbedMethod.Order {
     "Use `returnsWith` instead. Will be deleted in first release after 01.07.2025. This is needed to replace StubbedMethod0[R] with StubbedMethod[Unit, R]"
   )
   def returns(f: => R): Unit
-  
+
   def returnsWith(value: => R): Unit
 
   /** Allows to get number of times method was executed.
    *
-   *  {{{
+   * {{{
    *   (() => foo.foo0).returns(5)
    *   foo.foo0
    *   foo.foo0
    *
    *   (() => foo.foo0).times // 2
-   *  }}}
+   * }}}
    * */
   def times: Int
 }
@@ -96,13 +98,13 @@ trait StubbedMethod0[R] extends StubbedMethod.Order {
 trait StubbedMethod[A, R] extends StubbedMethod.Order {
   /** Allows to set result for method with arguments.
    *
-   *  Scala 3
-   *  {{{
+   * Scala 3
+   * {{{
    *   foo.fooBar.returns:
    *     case (true, "bar") => "true"
    *     case _ => "false
-   *  }}}
-   *  Scala 2
+   * }}}
+   * Scala 2
    * {{{
    *   (foo.fooBar _).returns {
    *     case (true, "bar") => "true"
@@ -115,11 +117,11 @@ trait StubbedMethod[A, R] extends StubbedMethod.Order {
 
   /** Allows to set result for method with arguments.
    *
-   *  Scala 3
-   *  {{{
+   * Scala 3
+   * {{{
    *   foo.fooBar.returnsWith("true")
-   *  }}}
-   *  Scala 2
+   * }}}
+   * Scala 2
    * {{{
    *   (foo.fooBar _).returnsWith("true")
    * }}}
@@ -129,14 +131,14 @@ trait StubbedMethod[A, R] extends StubbedMethod.Order {
 
   /** Allows to get number of times method was executed.
    *
-   *  Scala 3
-   *  {{{
+   * Scala 3
+   * {{{
    *   foo.foo.returns(x => 5)
    *   foo.foo(1)
    *
    *   foo.foo.times // 1
-   *  }}}
-   *  Scala 2
+   * }}}
+   * Scala 2
    * {{{
    *    (foo.foo _).returns(_ => 5)
    *    foo.foo(1)
@@ -148,15 +150,15 @@ trait StubbedMethod[A, R] extends StubbedMethod.Order {
 
   /** Allows to get number of times method was executed with specific arguments.
    *
-   *  Scala 3
-   *  {{{
+   * Scala 3
+   * {{{
    *   foo.foo.returns(_ => 5)
    *   foo.foo(1)
    *
    *   foo.foo.times(1) // 1
    *   foo.foo.times(100) // 0
-   *  }}}
-   *  Scala 2
+   * }}}
+   * Scala 2
    * {{{
    *    (foo.foo _).returns(_ => 5)
    *    foo.foo(1)
@@ -168,18 +170,18 @@ trait StubbedMethod[A, R] extends StubbedMethod.Order {
   final def times(args: A): Int = calls.count(_ == args)
 
   /** Allows to get arguments with which method was executed.
-   *  Returns multiple arguments as tuple.
-   *  One list item per call.
+   * Returns multiple arguments as tuple.
+   * One list item per call.
    *
-   *  Scala 3
-   *  {{{
+   * Scala 3
+   * {{{
    *   foo.foo.returns(_ => 5)
    *   foo.foo(1)
    *   foo.foo(100)
    *
    *   foo.foo.calls // List(1, 100)
-   *  }}}
-   *  Scala 2
+   * }}}
+   * Scala 2
    * {{{
    *    (foo.foo _).returns(_ => 5)
    *    foo.foo(1)
@@ -197,53 +199,53 @@ object StubbedMethod {
     /**
      * Returns true if this method was called before other method.
      *
-     *  Scala 3
-     *  {{{
+     * Scala 3
+     * {{{
      *   foo.foo.returns(_ => 5)
      *   foo.fooBar.returns(_ => "bar")
      *   foo.foo(1)
      *   foo.fooBar(true, "bar")
      *
      *   foo.foo.isBefore(foo.fooBar) // true
-     *  }}}
-     *  Scala 2
-     *  {{{
+     * }}}
+     * Scala 2
+     * {{{
      *    (foo.foo _).returns(_ => 5)
      *    (foo.fooBar _).returns(_ => "bar")
      *    foo.foo(1)
      *    foo.fooBar(true, "bar")
      *
      *   (foo.foo _).isBefore(foo.fooBar _) // true
-     *  }}}
+     * }}}
      */
     def isBefore(other: Order)(implicit callLog: CallLog): Boolean
 
     /** Returns true if this method was called after other method.
      *
-     *  Scala 3
-     *  {{{
+     * Scala 3
+     * {{{
      *   foo.foo.returns(_ => 5)
      *   foo.fooBar.returns(_ => "bar")
      *   foo.foo(1)
      *   foo.fooBar(true, "bar")
      *
      *   foo.foo.isAfter(foo.fooBar) // false
-     *  }}}
+     * }}}
      *
-     *  Scala 2
-     *  {{{
+     * Scala 2
+     * {{{
      *    (foo.foo _).returns(_ => 5)
      *    (foo.fooBar _).returns(_ => "bar")
      *    foo.foo(1)
      *    foo.fooBar(true, "bar")
      *
      *   (foo.foo _).isAfter(foo.fooBar _) // false
-     *  }}}
+     * }}}
      * */
     def isAfter(other: Order)(implicit callLog: CallLog): Boolean
 
     /** Returns string representation of method.
-     *  Representation currently depends on scala version.
+     * Representation currently depends on scala version.
      * */
     def asString: String
   }
@@ -253,7 +255,7 @@ object StubbedMethod {
     callLog: Option[CallLog],
     io: Option[StubIO]
   ) extends StubbedMethod[A, R]
-      with StubbedMethod0[R] {
+    with StubbedMethod0[R] with StubsOrderAlg {
 
     override def toString = asString
 
@@ -274,9 +276,10 @@ object StubbedMethod {
           }
         case Some(io) =>
           io.flatMap(
-            io.succeed {
-              callLog.foreach(_.internal.write(asString))
-              callsRef.updateAndGet(args :: _)
+            io.flatMap(
+              callLog.fold(io.succeed(()))(_.effectfulAPI(io).write(asString))
+            ) { _ =>
+              io.succeed(callsRef.updateAndGet(args :: _))
             }
           ) { _ =>
             resultRef.get() match {
@@ -306,14 +309,10 @@ object StubbedMethod {
     override def calls: List[A] =
       callsRef.get().reverse
 
-    override def isBefore(other: Order)(implicit callLog: CallLog): Boolean = {
-      val actual = callLog.internal.calledMethods
-      actual.indexOf(other.asString, actual.indexOf(asString)) != -1
-    }
+    override def isBefore(other: Order)(implicit callLog: CallLog): Boolean =
+      isBefore(callLog.internal.calledMethods, this.asString, other.asString)
 
-    override def isAfter(other: Order)(implicit callLog: CallLog): Boolean = {
-      val actual = callLog.internal.calledMethods
-      actual.indexOf(asString, actual.indexOf(other.asString)) != -1
-    }
+    override def isAfter(other: Order)(implicit callLog: CallLog): Boolean =
+      isAfter(callLog.internal.calledMethods, this.asString, other.asString)
   }
 }

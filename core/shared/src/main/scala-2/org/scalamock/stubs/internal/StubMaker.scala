@@ -21,17 +21,25 @@
 package org.scalamock.stubs.internal
 
 import org.scalamock.util.MacroAdapter.Context
-import org.scalamock.util.{MacroAdapter, MacroUtils}
-import org.scalamock.stubs.StubbedMethod
-import org.scalamock.stubs.{CallLog, StubIO, Stub}
+import org.scalamock.util.{MacroUtils, MacroAdapter}
+import org.scalamock.stubs.{StubbedMethod, Stub, CallLog, StubIO}
 
 private[scalamock]
 class StubMaker[C <: Context](val ctx: C) {
+
+  import ctx.universe._
+
+  def summonCallLog: ctx.Expr[Option[CallLog]] = {
+    val summonedTree = ctx.inferImplicitValue(typeOf[CallLog], silent = true)
+    val tree = if (summonedTree == EmptyTree) q"None" else q"Some($summonedTree)"
+    ctx.Expr(tree)
+  }
+  
   class StubMakerInner[T: ctx.WeakTypeTag](
     createdStubs: ctx.Expr[CreatedStubs],
-    stubUniqueIndexGenerator: ctx.Expr[StubUniqueIndexGenerator]
+    stubUniqueIndexGenerator: ctx.Expr[StubUniqueIndexGenerator],
+    callLog: ctx.Expr[Option[CallLog]]
   ) {
-    import ctx.universe._
 
     import scala.language.reflectiveCalls
 
@@ -194,7 +202,6 @@ class StubMaker[C <: Context](val ctx: C) {
       )
       val termName = mockFunctionName(m)
       val additionalAnnotations = if(isScalaJs) List(jsExport(termName.encodedName.toString)) else Nil
-      val summonedLog = ctx.inferImplicitValue(typeOf[CallLog], silent = true)
       val summonedIO = ctx.inferImplicitValue(typeOf[StubIO], silent = true)
       val summonedIOOpt = (if (summonedIO != EmptyTree) Some(summonedIO) else None)
         .filter { io =>
@@ -207,7 +214,7 @@ class StubMaker[C <: Context](val ctx: C) {
         callConstructor(
           New(AppliedTypeTree(Ident(clazz.typeSymbol), types)),
           generateMockMethodName(m, m.typeSignature),
-          if (summonedLog == EmptyTree) q"None" else q"Some($summonedLog)",
+          callLog.tree,
           summonedIOOpt.fold(q"None": Tree)(io => q"Some($io)"),
         )
       )

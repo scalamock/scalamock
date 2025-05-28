@@ -12,7 +12,9 @@ object StubZIOMacroImpl {
     tag: c.Expr[Tag[Stub[T]]]
   ): c.Expr[StubZIO[T]] = {
     import c.universe._
-    val stub = StubMakerImpl.stub[T](c)(createdStubs, stubUniqueIndexGenerator)
+    val callLog = c.Expr[Option[CallLog]](q"Some(_root_.org.scalamock.stubs.ZCallLog())")
+    val maker = new StubMaker[c.type](c)
+    val stub = new maker.StubMakerInner[T](createdStubs, stubUniqueIndexGenerator, callLog).make
     c.Expr[StubZIO[T]](q"new _root_.org.scalamock.stubs.StubZIO($stub)($tag)")
   }
 }

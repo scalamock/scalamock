@@ -1,7 +1,7 @@
 package newapi
 
 import newapi.ItemsService.WrongRequestError
-import org.scalamock.stubs.{ZIOStubs, Stub, StubZIOStubbedPartiallyApplied}
+import org.scalamock.stubs._
 import zio._
 import zio.test._
 
@@ -42,87 +42,97 @@ object ItemsService {
 
 object ZIOLayersUsageSpec extends ZIOSpecDefault with ZIOStubs {
 
-  val dbStub      = stubZIO[Database]
-  val getCall     = dbStub.stubbed(_.get _)
+  val dbStub = stubZIO[Database]
+  val getCall = dbStub.stubbed(_.get _)
   val persistCall = dbStub.stubbed(_.persist _)
 
   val item = "table"
 
-  override def spec: Spec[TestEnvironment with Scope, Any] = suite("ZIO Layers usage (ItemsService test)")(
-    test("get item successfully"){
-      val id = 150
+  override def spec: Spec[TestEnvironment with Scope, Any] = {
+    suite("ZIO Layers usage (ItemsService test)")(
+      test("get item successfully") {
+        val id = 150
 
-      for {
-        _ <- getCall.succeedsWith(item)
-        resp <- ZIO.serviceWithZIO[ItemsService](_.getItem(id))
-        calls <- getCall.callsZIO
-        pc <- persistCall.timesZIO
-      } yield assertTrue(
-        resp.get == item,
-        calls.size == 1,
-        calls.head == id,
-        pc == 0
-      )
-    },
-    test("recover exception during getting an item"){
-      val id = 150
+        for {
+          _ <- getCall.succeedsWith(item)
+          resp <- ZIO.serviceWithZIO[ItemsService](_.getItem(id))
+          calls <- getCall.callsZIO
+          pc <- persistCall.timesZIO
+          getBeforePersist <- getCall isBefore persistCall
+        } yield {
+          assertTrue(
+            resp.get == item,
+            calls.size == 1,
+            calls.head == id,
+            pc == 0,
+            !getBeforePersist
+          )
+        }
+      },
+      test("recover exception during getting an item") {
+        val id = 150
 
-      for {
-        resp <- ZIO.serviceWithZIO[ItemsService](_.getItem(id))
-        calls <- getCall.callsZIO
-        pc <- persistCall.timesZIO
-      } yield assertTrue(
-        resp.isEmpty,
-        calls.size == 1,
-        calls.head == id,
-        pc == 0
-      )
-      
-    }.provideSome[ItemsService & Stub[Database]]( //another way to stub response 
-      ZLayer(getCall.failsWith(new Exception("Element does not exist")))
-    ),
-    test("return None if id is wrong"){
-      val id = 10
+        for {
+          resp <- ZIO.serviceWithZIO[ItemsService](_.getItem(id))
+          calls <- getCall.callsZIO
+          pc <- persistCall.timesZIO
+        } yield {
+          assertTrue(
+            resp.isEmpty,
+            calls.size == 1,
+            calls.head == id,
+            pc == 0
+          )
+        }
 
-      for {
-        resp <- ZIO.serviceWithZIO[ItemsService](_.getItem(id))
-        dc <- getCall.timesZIO
-        pc <- persistCall.timesZIO
-      } yield assertTrue(
-        resp.isEmpty,
-        dc == 0,
-        pc == 0
-      )
-    },
-    test("persist item successfully"){
-      val id = 200
+      }.provideSome[ItemsService & Stub[Database]]( //another way to stub response 
+        ZLayer(getCall.failsWith(new Exception("Element does not exist")))
+      ),
+      test("return None if id is wrong") {
+        val id = 10
 
-      for {
-        _ <- persistCall.succeedsWith(1)
-        _ <- ZIO.serviceWithZIO[ItemsService](_.addItem(id, item))
-        dc <- getCall.timesZIO
-        pc <- persistCall.callsZIO
-      } yield assertTrue(
-        dc == 0,
-        pc.size == 1,
-        pc.head == (id, item)
-      )
-    },
-    test("fails with  WrongRequestError if id is wrong "){
-      val id = 10
+        for {
+          resp <- ZIO.serviceWithZIO[ItemsService](_.getItem(id))
+          dc <- getCall.timesZIO
+          pc <- persistCall.timesZIO
+        } yield assertTrue(
+          resp.isEmpty,
+          dc == 0,
+          pc == 0
+        )
+      },
+      test("persist item successfully") {
+        val id = 200
 
-      for {
-        e <- ZIO.serviceWithZIO[ItemsService](_.addItem(id, item)).flip
-        dc <- getCall.timesZIO
-        pc <- persistCall.timesZIO
-      } yield assertTrue(
-        e == WrongRequestError("Wrong id: 10"),
-        dc == 0,
-        pc == 0
-      )
-    },
-    
-  ).provide(
+        for {
+          _ <- persistCall.succeedsWith(1)
+          _ <- ZIO.serviceWithZIO[ItemsService](_.addItem(id, item))
+          dc <- getCall.timesZIO
+          pc <- persistCall.callsZIO
+        } yield {
+          assertTrue(
+            dc == 0,
+            pc.size == 1,
+            pc.head == (id, item)
+          )
+        }
+      },
+      test("fails with  WrongRequestError if id is wrong ") {
+        val id = 10
+
+        for {
+          e <- ZIO.serviceWithZIO[ItemsService](_.addItem(id, item)).flip
+          dc <- getCall.timesZIO
+          pc <- persistCall.timesZIO
+        } yield assertTrue(
+          e == WrongRequestError("Wrong id: 10"),
+          dc == 0,
+          pc == 0
+        )
+      },
+
+    )
+  }.provide(
     dbStub,
     ZLayer.succeed(ItemsService.Config(100, 1000)),
     ItemsService.layer

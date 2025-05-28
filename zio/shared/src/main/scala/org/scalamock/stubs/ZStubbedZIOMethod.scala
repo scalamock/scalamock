@@ -1,7 +1,7 @@
 package org.scalamock.stubs
 import zio._
 
-trait ZStubbedZIOMethod[REnv, Args, Zio] {
+trait ZStubbedZIOMethod[-REnv, Args, Zio] {
   protected def delegateZIO: URIO[REnv, StubbedMethod[Args, Zio]]
 
   /** Allows to set result for method with arguments. Returns ZIO
@@ -169,4 +169,18 @@ trait ZStubbedZIOMethod[REnv, Args, Zio] {
    *  }}}
    * */
   def callsZIO: URIO[REnv, List[Args]] = delegateZIO.flatMap(d => ZIO.succeed(d.calls))
+}
+
+object ZStubbedZIOMethod {
+
+  trait HasStringId[-REnv] { self: ZStubbedZIOMethod[REnv, _, _] =>
+    val asString: URIO[REnv, String] = self.delegateZIO.map(_.asString)
+  }
+
+  trait Order[-REnv] { self: HasStringId[REnv] =>
+    def isBefore[R <: REnv](other: HasStringId[R]): URIO[R, Boolean] = ZCallLog.isBefore(self, other)
+
+    def isAfter[R <: REnv](other: HasStringId[R]): URIO[R, Boolean] = ZCallLog.isAfter(self, other)
+  }
+
 }
