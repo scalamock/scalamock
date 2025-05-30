@@ -366,6 +366,8 @@ class StubbedZIOMethod[A, R](delegate: StubbedMethod[A, R]) extends StubbedMetho
    * */
   def returnsWith(value: => R) = delegate.returnsWith(value)
 
+  def returnsWhen(pf: PartialFunction[A, R]): Unit = delegate.returnsWhen(pf)
+
   /** Allows to get number of times method was executed.
    *
    * {{{

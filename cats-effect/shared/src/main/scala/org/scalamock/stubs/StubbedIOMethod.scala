@@ -324,6 +324,8 @@ class StubbedIOMethod[A, R](delegate: StubbedMethod[A, R]) extends StubbedMethod
    * */
   def returnsWith(f: => R): Unit = delegate.returnsWith(f)
 
+  def returnsWhen(pf: PartialFunction[A, R]): Unit = delegate.returnsWhen(pf)
+
   /** Allows to get number of times method was executed.
    *
    *  Scala 3

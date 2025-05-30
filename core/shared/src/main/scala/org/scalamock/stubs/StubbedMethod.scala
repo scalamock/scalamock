@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicReference
  * [[Stubs]] interface provides implicit conversion from selected method to StubbedMethod0
  *
  * You need to explicitly convert it to a function () => R
- * 
+ *
  * {{{
  *   trait Foo:
  *     def foo0: Int
@@ -53,7 +53,7 @@ trait StubbedMethod0[R] extends StubbedMethod.Order {
     "Use `returnsWith` instead. Will be deleted in first release after 01.07.2025. This is needed to replace StubbedMethod0[R] with StubbedMethod[Unit, R]"
   )
   def returns(f: => R): Unit
-  
+
   def returnsWith(value: => R): Unit
 
   /** Allows to get number of times method was executed.
@@ -126,6 +126,33 @@ trait StubbedMethod[A, R] extends StubbedMethod.Order {
    *
    * */
   def returnsWith(value: => R): Unit
+
+  /** Allows to set a result for the method with arguments using a partial function
+   * in order to stub a certain set of argument values only and fail otherwise.
+   *
+   * Scala 3
+   * {{{
+   *   foo.fooBar.returnsWhen:
+   *     case (true, "foo") => "true"
+   *     case (_, "bar") => "false
+   * }}}
+   * Scala 2
+   * {{{
+   *   (foo.fooBar _).returnsWhen {
+   *     case (true, "foo") => "true"
+   *     case (_, "bar") => "false
+   *   }
+   * }}}
+   * If the stubbed method is called with an argument for which the partial function is not defined,
+   * then a `NotImplementedError` will be thrown:
+   * {{{
+   *   foo.fooBar((false, "bar")) // returns "false"
+   *   foo.fooBar((false, "foo")) // throws NotImplementedError
+   * }}}
+   *
+   * @param pf partial function from arguments of type `A` to result of type `R`
+   */
+  def returnsWhen(pf: PartialFunction[A, R]): Unit
 
   /** Allows to get number of times method was executed.
    *
@@ -296,6 +323,15 @@ object StubbedMethod {
 
     override def returnsWith(value: => R): Unit =
       resultRef.set(Some(_ => value))
+
+    override def returnsWhen(pf: PartialFunction[A, R]): Unit = {
+      val f: A => R =
+        pf.orElse { case a =>
+          throw new NotImplementedError(s"$asString not registered for $a")
+        }
+
+      returns(f)
+    }
 
     override def returns(f: => R): Unit =
       returnsWith(f)
