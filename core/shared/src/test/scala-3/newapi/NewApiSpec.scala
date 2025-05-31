@@ -1221,3 +1221,40 @@ class NewApiSpec extends AnyFunSpec, Matchers, Stubs:
     m.withDefaultParamAndTypeParam[Int]("defaul", 5) shouldBe 6
   }
 
+  it("returnsWhen cope with 1-param method") {
+    val m = stub[TestTrait]
+    m.oneParam.returnsWhen:
+      case 42 => "the answer to everything"
+
+    m.oneParam(42) shouldBe "the answer to everything"
+    the[NotImplementedError] thrownBy {
+      m.oneParam(100)
+    } should have message
+      "<stub-102> TestTrait.oneParam(x: Int)String not registered for 100"
+  }
+
+  it("returnsWhen cope with 2-param method") {
+    val m = stub[TestTrait]
+    m.twoParams.returnsWhen:
+      case (1, 2.3) => "nice"
+      case (4, _) => "cool"
+
+    m.twoParams(1, 2.3) shouldBe "nice"
+    m.twoParams(4, 5.6) shouldBe "cool"
+    the[NotImplementedError] thrownBy {
+      m.twoParams(1, 1.1)
+    } should have message
+      "<stub-103> TestTrait.twoParams(x: Int, y: Double)String not registered for (1,1.1)"
+  }
+
+  it("returnsWhen cope with curried method") {
+    val m = stub[TestTrait]
+    (m.curried(_: Int)(_: Double)).returnsWhen:
+      case (123, 45.6) => "789"
+
+    m.curried(123)(45.6) shouldBe "789"
+    the[NotImplementedError] thrownBy {
+      m.curried(654)(3.21)
+    } should have message
+      "<stub-104> TestTrait.curried(x: Int)(y: Double)String not registered for (654,3.21)"
+  }

@@ -1121,5 +1121,57 @@ class NewApiSpec extends AnyFunSpec with Matchers with Stubs {
     m.withDefaultParamAndTypeParam[Int]("default", 5) shouldBe 5
     m.withDefaultParamAndTypeParam[Int]("defaul", 5) shouldBe 6
   }
-}
 
+  it("returnsWhen cope with 1-param method") {
+    val m = stub[TestTrait]
+    (m.oneParam _).returnsWhen {
+      case 42 => "the answer to everything"
+    }
+
+    m.oneParam(42) shouldBe "the answer to everything"
+
+    val obtained =
+      intercept[NotImplementedError] {
+        m.oneParam(100)
+      }.getMessage
+    // Exact error message varies in Scala 2.12 and 2.13
+    obtained should {
+      include("TestTrait.oneParam(x: Int)") and endWith("String not registered for 100")
+    }
+  }
+
+  it("returnsWhen cope with 2-param method") {
+    val m = stub[TestTrait]
+    (m.twoParams _).returnsWhen {
+      case (1, 2.3) => "nice"
+      case (4, _) => "cool"
+    }
+
+    m.twoParams(1, 2.3) shouldBe "nice"
+    m.twoParams(4, 5.6) shouldBe "cool"
+
+    val obtained =
+      intercept[NotImplementedError] {
+        m.twoParams(1, 1.1)
+      }.getMessage
+    // Exact error message varies in Scala 2.12 and 2.13
+    // Also note that Double can be formatted differently on JVM and JS.
+    obtained should (include("TestTrait.twoParams(x: Int, y: Double)") and endWith("String not registered for (1,1.1)"))
+  }
+
+  it("returnsWhen cope with curried method") {
+    val m = stub[TestTrait]
+    (m.curried(_: Int)(_: Double)).returnsWhen {
+      case (123, 45.6) => "789"
+    }
+    m.curried(123)(45.6) shouldBe "789"
+
+    val obtained =
+      intercept[NotImplementedError] {
+        m.curried(654)(3.21)
+      }.getMessage
+    // Exact error message varies in Scala 2.12 and 2.13
+    // Also note that Double can be formatted differently on JVM and JS.
+    obtained should (include("TestTrait.curried(x: Int)(y: Double)") and endWith("String not registered for (654,3.21)"))
+  }
+}
