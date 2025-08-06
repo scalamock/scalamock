@@ -183,6 +183,38 @@ class MySuite extends munit.FunSuite, Stubs:
     assertEquals(userService.findUser(unknownUserId), None)
 ```
 
+### returnsOnCall
+`returnsOnCall` allows you to set method result depending on call number
+
+```scala
+//> using test.dep org.scalamock::scalamock:7.3.2
+//> using test.dep org.scalameta::munit:1.1.1
+
+import org.scalamock.stubs.*
+
+case class User(id: Long)
+
+trait UserService:
+  def findUser(userId: Long): Option[User]
+
+class MySuite extends munit.FunSuite, Stubs:
+  val userId = 100
+  val user = User(userId)
+
+  val userService: Stub[UserService] = stub[UserService]
+
+  userService.findUser.returnsOnCall:
+    case 1 => Some(user)
+    case _ => None
+
+  test("return user for known user id"):
+    val result1 = userService.findUser(userId)
+    val result2 = userService.findUser(userId)
+    assertEquals(result1, Some(user))
+    assertEquals(result2, None)
+
+```
+
 ### calls and times
 
 `calls` returns arguments with which method was invoked, since there might be multiple invocations, it returns a list.
