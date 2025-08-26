@@ -55,7 +55,7 @@ object ZIOSpec extends ZIOSpecDefault, ZIOStubs:
         for
           _ <- foo.zeroArgsTask.returnsZIOWith(ZIO.none)
           _ <- foo.zeroArgsTask.repeatN(10)
-        yield assertTrue(foo.zeroArgsTask.times == 11),
+        yield assertTrue(foo.zeroArgsTask.calls.size == 11),
       test("two args and cleanup"):
         for
           _ <- foo.twoArgsIOFail.returnsZIO(_ => ZIO.fail(2))
@@ -64,7 +64,7 @@ object ZIOSpec extends ZIOSpecDefault, ZIOStubs:
           times2 <- foo.zeroArgsTask.timesZIO
           result = assertTrue(
             foo.twoArgsIOFail.calls == List((1, "")),
-            foo.zeroArgsTask.times == 0
+            foo.zeroArgsTask.calls.isEmpty
           )
         yield result,
       test("one arg"):

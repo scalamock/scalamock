@@ -92,4 +92,21 @@ class StubbedIOMethodSpec extends CatsEffectSuite with CatsEffectStubs {
       times <- (testStub.oneArg _).timesIO
     } yield assertEquals(times, 3)
   }
+
+  test("set result depending on number of call") {
+    val testStub = stub[TestTraitWithArgs]
+    for {
+      _ <- (testStub.oneArg _).returnsIOOnCall {
+        case 1 => IO("test")
+        case _ => IO("test2")
+      }
+      res1 <- testStub.oneArg(1)
+      res2 <- testStub.oneArg(2)
+      res3 <- testStub.oneArg(3)
+    } yield {
+      assertEquals(res1, "test")
+      assertEquals(res2, "test2")
+      assertEquals(res3, "test2")
+    }
+  }
 }

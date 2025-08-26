@@ -99,7 +99,6 @@ object StubbedZIOMethodSpec extends ZIOSpecDefault, ZIOStubs:
             case Exit.Success(_) => assertTrue(false)
             case Exit.Failure(cause) => assertTrue(cause.defects.contains(exception))
         ,
-
         test("timesZIO should return the number of times a method was called"):
           val testStub = stub[TestTraitWithArgs]
           for
@@ -109,5 +108,20 @@ object StubbedZIOMethodSpec extends ZIOSpecDefault, ZIOStubs:
             _ <- testStub.oneArg(3)
             times <- testStub.oneArg.timesZIO
           yield assertTrue(times == 3)
+        ,
+        test("set result depending on number of call"):
+          val testStub = stub[TestTraitWithArgs]
+          for
+            _ <- testStub.oneArg.returnsZIOOnCall:
+              case 1 => ZIO.succeed("test")
+              case _ => ZIO.succeed("test2")
+            res1 <- testStub.oneArg(1)
+            res2 <- testStub.oneArg(2)
+            res3 <- testStub.oneArg(3)
+          yield assertTrue(
+            res1 == "test",
+            res2 == "test2",
+            res3 == "test2"
+          )
       )
     ) @@ TestAspect.before(ZIO.succeed(resetStubs())) @@ TestAspect.sequential

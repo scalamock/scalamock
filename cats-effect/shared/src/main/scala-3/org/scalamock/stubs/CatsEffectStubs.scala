@@ -1,7 +1,7 @@
 package org.scalamock.stubs
 
 import cats.effect.IO
-import org.scalamock.stubs.{StubbedIOMethod, StubbedIOMethod0}
+import org.scalamock.stubs.StubbedIOMethod
 import scala.language.implicitConversions
 import scala.util.NotGiven
 import scala.concurrent.Future
@@ -19,11 +19,11 @@ trait CatsEffectStubs extends StubsBase {
 
   final given CatsEffectStubIO = CatsEffectStubIO()
 
-  implicit inline def stubbed[R](inline f: => R)(using R <:< IO[?]): StubbedIOMethod0[R] =
-    StubbedIOMethod0[R](stubbed00Impl[R](f))
+  implicit inline def stubbed[R](inline f: => R)(using R <:< IO[?]): StubbedIOMethod[Unit, R] =
+    StubbedIOMethod(stubbed00Impl[R](f))
 
-  implicit inline def stubbed[R](inline f: () => R)(using R =:= R): StubbedIOMethod0[R] =
-    StubbedIOMethod0(stubbed0Impl[R](f))
+  implicit inline def stubbed[R](inline f: () => R)(using R =:= R): StubbedIOMethod[Unit, R] =
+    StubbedIOMethod(stubbed0Impl[R](f))
 
   implicit inline def stubbed[T1, R](inline f: T1 => R)(using (T1, R) =:= (T1, R)): StubbedIOMethod[T1, R] =
     StubbedIOMethod(stubbed1Impl[T1, R](f))

@@ -22,7 +22,7 @@ package org.scalamock.stubs.internal
 
 import org.scalamock.context.MockContext
 import org.scalamock.util.MacroAdapter.Context
-import org.scalamock.stubs.{StubbedMethod, StubbedMethod0, Stub}
+import org.scalamock.stubs.{StubbedMethod, Stub}
 
 private[scalamock]
 object StubMakerImpl {
@@ -35,8 +35,8 @@ object StubMakerImpl {
     new maker.StubMakerInner[T](createdStubs, stubUniqueIndexGenerator).make
   }
 
-  def toStubbedMethod0[R: c.WeakTypeTag](c: Context)(f: c.Expr[R]): c.Expr[StubbedMethod0[R]] =
-    StubbedMethodFinder.find[StubbedMethod0[R]](c)(f, List(c.weakTypeOf[Unit]))
+  def toStubbedMethod0[R: c.WeakTypeTag](c: Context)(f: c.Expr[R]): c.Expr[StubbedMethod[Unit, R]] =
+    StubbedMethodFinder.find[StubbedMethod[Unit, R]](c)(f, List(c.weakTypeOf[Unit]))
   
   def toStubbedMethod1[T1: c.WeakTypeTag, R: c.WeakTypeTag](c: Context)(f: c.Expr[T1 => R]): c.Expr[StubbedMethod[T1, R]] =
     StubbedMethodFinder.find[StubbedMethod[T1, R]](c)(f, List(c.weakTypeOf[T1]))

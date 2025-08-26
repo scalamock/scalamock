@@ -61,8 +61,6 @@ class StubbedIOMethodSpec extends CatsEffectSuite, CatsEffectStubs:
       result <- testStub.twoArgs(10, "test")
     yield assertEquals(result, 42)
 
-
-
   test("StubbedIOMethod - raisesErrorWith should set an error for a method with arguments"):
     val testStub = stub[TestTraitWithArgs]
     val exception = new RuntimeException("test exception")
@@ -70,8 +68,6 @@ class StubbedIOMethodSpec extends CatsEffectSuite, CatsEffectStubs:
       _ <- testStub.twoArgs.raisesErrorWith(exception)
       result <- testStub.twoArgs(10, "test").attempt
     yield assert(result.isLeft)
-
-
 
   test("StubbedIOMethod - timesIO should return the number of times a method was called"):
     val testStub = stub[TestTraitWithArgs]
@@ -82,3 +78,19 @@ class StubbedIOMethodSpec extends CatsEffectSuite, CatsEffectStubs:
       _ <- testStub.oneArg(3)
       times <- testStub.oneArg.timesIO
     yield assertEquals(times, 3)
+
+  test("set result depending on number of call"):
+    val testStub = stub[TestTraitWithArgs]
+    for
+      _ <- testStub.oneArg.returnsIOOnCall:
+        case 1 => IO("test")
+        case _ => IO("test2")
+      res1 <- testStub.oneArg(1)
+      res2 <- testStub.oneArg(2)
+      res3 <- testStub.oneArg(3)
+    yield {
+      assertEquals(res1, "test")
+      assertEquals(res2, "test2")
+      assertEquals(res3, "test2")
+    }
+      

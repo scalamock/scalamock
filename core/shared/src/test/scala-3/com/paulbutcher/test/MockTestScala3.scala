@@ -105,5 +105,10 @@ class MockTestScala3 extends AnyFreeSpec with MockFactory with Matchers {
       m1.thisTypeMethod(1) shouldBe m1
     }
 
+    "mock by-name arguments" in {
+      class ByName(t: => String)
+      "mock[ByName]" should compile
+    }
+
   }
 }

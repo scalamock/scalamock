@@ -1,20 +1,20 @@
 package org.scalamock.stubs.internal
 
-import org.scalamock.stubs.{StubbedIOMethod0, StubbedIOMethod, StubbedMethod, StubbedMethod0}
+import org.scalamock.stubs.{StubbedIOMethod, StubbedMethod}
 import org.scalamock.util.MacroAdapter.Context
 
 private[scalamock]
 object CatsStubMakerImpl {
-  def toStubbedMethod00[R: c.WeakTypeTag](c: Context)(f: c.Expr[R])(ev: c.Expr[Any]): c.Expr[StubbedIOMethod0[R]] = {
+  def toStubbedMethod00[R: c.WeakTypeTag](c: Context)(f: c.Expr[R])(ev: c.Expr[Any]): c.Expr[StubbedIOMethod[Unit, R]] = {
     import c.universe._
-    val sm = StubbedMethodFinder.find[StubbedMethod0[R]](c)(f, List(c.weakTypeOf[Unit]))
-    c.Expr[StubbedIOMethod0[R]](q"new _root_.org.scalamock.stubs.StubbedIOMethod0($sm)")
+    val sm = StubbedMethodFinder.find[StubbedMethod[Unit, R]](c)(f, List(c.weakTypeOf[Unit]))
+    c.Expr[StubbedIOMethod[Unit, R]](q"new _root_.org.scalamock.stubs.StubbedIOMethod($sm)")
   }
 
-  def toStubbedMethod0[R: c.WeakTypeTag](c: Context)(f: c.Expr[R]): c.Expr[StubbedIOMethod0[R]] = {
+  def toStubbedMethod0[R: c.WeakTypeTag](c: Context)(f: c.Expr[R]): c.Expr[StubbedIOMethod[Unit, R]] = {
     import c.universe._
-    val sm = StubbedMethodFinder.find[StubbedMethod0[R]](c)(f, List(c.weakTypeOf[Unit]))
-    c.Expr[StubbedIOMethod0[R]](q"new _root_.org.scalamock.stubs.StubbedIOMethod0($sm)")
+    val sm = StubbedMethodFinder.find[StubbedMethod[Unit, R]](c)(f, List(c.weakTypeOf[Unit]))
+    c.Expr[StubbedIOMethod[Unit, R]](q"new _root_.org.scalamock.stubs.StubbedIOMethod($sm)")
   }
 
   def toStubbedMethod1[T1: c.WeakTypeTag, R: c.WeakTypeTag](c: Context)(f: c.Expr[T1 => R]): c.Expr[StubbedIOMethod[T1, R]] = {

@@ -114,6 +114,22 @@ object StubbedZIOMethodSpec extends ZIOSpecDefault with ZIOStubs {
             _ <- testStub.oneArg(3)
             times <- (testStub.oneArg _).timesZIO
           } yield assertTrue(times == 3)
+        },
+        test("set result depending on number of call") {
+          val testStub = stub[TestTraitWithArgs]
+          for {
+            _ <- (testStub.oneArg _).returnsZIOOnCall {
+              case 1 => ZIO.succeed("test")
+              case _ => ZIO.succeed("test2")
+            }
+            res1 <- testStub.oneArg(1)
+            res2 <- testStub.oneArg(2)
+            res3 <- testStub.oneArg(3)
+          } yield assertTrue(
+            res1 == "test",
+            res2 == "test2",
+            res3 == "test2"
+          )
         }
       )
     ) @@ TestAspect.before(ZIO.succeed(resetStubs())) @@ TestAspect.sequential

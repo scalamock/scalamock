@@ -21,7 +21,7 @@
 package org.scalamock.stubs.internal
 
 import org.scalamock.clazz.Utils
-import org.scalamock.stubs.{CallLog, Stub, StubIO, StubbedMethod, StubbedMethod0}
+import org.scalamock.stubs.{CallLog, Stub, StubIO, StubbedMethod}
 
 import scala.annotation.{experimental, tailrec}
 import scala.collection.mutable
@@ -190,12 +190,12 @@ private[stubs] class StubMaker(
 
 
   @experimental
-  def getStubbed00[R: Type](select: Expr[R]): Expr[StubbedMethod0[R]] =
-    searchTermWithMethod(select.asTerm, Nil).selectReflect[StubbedMethod0[R]](_.stubValName)
+  def getStubbed00[R: Type](select: Expr[R]): Expr[StubbedMethod[Unit, R]] =
+    searchTermWithMethod(select.asTerm, Nil).selectReflect[StubbedMethod[Unit, R]](_.stubValName)
 
   @experimental
-  def getStubbed0[R: Type](select: Expr[() => R]): Expr[StubbedMethod0[R]] =
-    searchTermWithMethod(select.asTerm, Nil).selectReflect[StubbedMethod0[R]](_.stubValName)
+  def getStubbed0[R: Type](select: Expr[() => R]): Expr[StubbedMethod[Unit, R]] =
+    searchTermWithMethod(select.asTerm, Nil).selectReflect[StubbedMethod[Unit, R]](_.stubValName)
 
   @experimental
   def getStubbed[Args: Type, R: Type](select: Expr[Any]): Expr[StubbedMethod[Args, R]] =

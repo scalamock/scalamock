@@ -18,10 +18,10 @@ trait CatsEffectStubs extends StubsBase {
 
   final implicit val stubIO: CatsEffectStubIO = new CatsEffectStubIO()
 
-  implicit def stubbed[R](f: => R)(implicit ev: R <:< IO[_]): StubbedIOMethod0[R] =
+  implicit def stubbed[R](f: => R)(implicit ev: R <:< IO[_]): StubbedIOMethod[Unit, R] =
     macro CatsStubMakerImpl.toStubbedMethod00[R]
 
-  implicit def stubbed[R](f: () => R): StubbedIOMethod0[R] =
+  implicit def stubbed[R](f: () => R): StubbedIOMethod[Unit, R] =
     macro CatsStubMakerImpl.toStubbedMethod0[R]
 
   implicit def stubbed[T1, R](f: T1 => R): StubbedIOMethod[T1, R] =

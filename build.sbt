@@ -46,7 +46,7 @@ lazy val `scalamock-zio` = crossProject(JSPlatform, JVMPlatform)
     commonSettings,
     crossScalaSettings,
     libraryDependencies ++= {
-      val zioVersion = "2.1.18"
+      val zioVersion = "2.1.20"
       Seq(
         "dev.zio" %%% "zio" % zioVersion,
         "dev.zio" %%% "zio-test" % zioVersion % Test,
@@ -66,7 +66,7 @@ lazy val `scalamock-cats-effect` = crossProject(JSPlatform, JVMPlatform)
     commonSettings,
     crossScalaSettings,
     libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats-effect" % "3.6.1",
+      "org.typelevel" %% "cats-effect" % "3.6.3",
       "org.typelevel" %% "munit-cats-effect" % "2.1.0" % Test
     )
   )

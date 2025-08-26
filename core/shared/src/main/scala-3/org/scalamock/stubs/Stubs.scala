@@ -46,10 +46,10 @@ trait StubsBase {
 
 trait Stubs extends StubsBase {
 
-  implicit inline def stubbed[R](inline f: => R)(using R <:< Future[?]): StubbedMethod0[R] =
+  implicit inline def stubbed[R](inline f: => R)(using R <:< Future[?]): StubbedMethod[Unit, R] =
     stubbed00Impl[R](f)
 
-  implicit inline def stubbed[R](inline f: () => R)(using R =:= R): StubbedMethod0[R] =
+  implicit inline def stubbed[R](inline f: () => R)(using R =:= R): StubbedMethod[Unit, R] =
     stubbed0Impl[R](f)
 
   implicit inline def stubbed[T1, R](inline f: T1 => R)(using (T1, R) =:= (T1, R)): StubbedMethod[T1, R] =

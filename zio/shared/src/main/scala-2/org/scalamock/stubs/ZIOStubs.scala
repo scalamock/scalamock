@@ -17,10 +17,10 @@ trait ZIOStubs extends StubsBase {
 
   final implicit val stubIO: ZIOStubIO = new ZIOStubIO()
 
-  implicit def stubbed[R](f: => R)(implicit ev: R <:< IO[Any, Any]): StubbedZIOMethod0[R] =
+  implicit def stubbed[R](f: => R)(implicit ev: R <:< IO[Any, Any]): StubbedZIOMethod[Unit, R] =
     macro ZIOStubMakerImpl.toStubbedMethod00[R]
 
-  implicit def stubbed[R](f: () => R): StubbedZIOMethod0[R] =
+  implicit def stubbed[R](f: () => R): StubbedZIOMethod[Unit, R] =
     macro ZIOStubMakerImpl.toStubbedMethod0[R]
 
   implicit def stubbed[T1, R](f: T1 => R): StubbedZIOMethod[T1, R] =

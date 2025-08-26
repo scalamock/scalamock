@@ -44,7 +44,7 @@ trait StubsBase {
 }
 
 trait Stubs extends StubsBase {
-  implicit def stubbed[R](f: () => R): StubbedMethod0[R] =
+  implicit def stubbed[R](f: () => R): StubbedMethod[Unit, R] =
     macro StubMakerImpl.toStubbedMethod0[R]
 
   implicit def stubbed[T1, R](f: T1 => R): StubbedMethod[T1, R] =

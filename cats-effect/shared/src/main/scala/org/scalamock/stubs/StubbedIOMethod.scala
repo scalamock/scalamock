@@ -3,140 +3,12 @@ package org.scalamock.stubs
 import cats.effect.IO
 
 /**
- * Representation of stubbed method without arguments.
- *
- * [[CatsEffectStubs]] interface provides implicit conversion from selected method to StubbedMethodIO0.
- * {{{
- *   trait Foo:
- *     def foo00(): String
- *     def fooIO: IO[Int]
- *
- *   val foo = stub[Foo]
- * }}}
- *
- * The default way of getting stub for such method - convert it to a function () => R.
- * 
- * Exclusively for IO - you can omit converting it to function
- *
- * {{{
- *   val foo00Stubbed: StubbedMethod0[String] = () => foo.foo00()
- *   val fooIOStubbed: StubbedMethod0[IO[Int]] = foo.fooIO
- * }}}
- * */
-class StubbedIOMethod0[R](delegate: StubbedMethod0[R]) extends StubbedMethod0[R] {
-  /** Allows to set result for method without arguments. Returns IO.
-   *
-   * {{{
-   *    for {
-   *      _ <- (() => foo.foo00()).returnsIO("result")
-   *      _ <- foo.fooIO.returnsIO(IO(1))
-   *    } yield ()
-   * }}}
-   * */
-  @deprecated(
-    "Use `returnsIOWith`, `succeedsWith`, `raisesErrorWith` instead. Will be deleted in first release after 01.07.2025. This is needed to replace StubbedMethod0[R] with StubbedMethod[Unit, R]"
-  )
-  def returnsIO(f: => R): IO[Unit] = IO(returns(f))
-
-  /** Allows to set result for method without arguments. Returns IO.
-   *
-   * {{{
-   *    for {
-   *      _ <- (() => foo.foo00()).returnsIOWith("result")
-   *      _ <- foo.fooIO.returnsIOWith(IO(1))
-   *    } yield ()
-   * }}}
-   * */
-  def returnsIOWith(value: => R): IO[Unit] = returnsIO(value)
-
-  /** Allows to set result for method without arguments.
-   *
-   * {{{
-   *    (() => foo.foo00()).returns("result")
-   *    foo.fooIO.returns(IO(1))
-   * }}}
-   * */
-  def returns(f: => R): Unit = delegate.returns(f)
-
-  /** Allows to set result for method without arguments.
-   *
-   * {{{
-   *    (() => foo.foo00()).returnsWith("result")
-   *    foo.fooIO.returnsWith(IO(1))
-   * }}}
-   * */
-  def returnsWith(f: => R): Unit = delegate.returnsWith(f)
-
-  /** Allows to set success for method without arguments. Returns IO.
-   *
-   * {{{
-   *    for {
-   *      _ <- foo.fooIO.succeedsWith(1)
-   *    } yield ()
-   * }}}
-   * */
-  def succeedsWith[RR](value: => RR)(implicit ev: IO[RR] <:< R): IO[Unit] =
-    returnsIOWith(ev(IO(value)))
-
-  /** Allows raise error for method without arguments. Returns IO.
-   *
-   * {{{
-   *    for {
-   *      _ <- foo.fooIO.failsWith(1)
-   *    } yield ()
-   * }}}
-   * */
-  def raisesErrorWith(ex: => Throwable)(implicit ev: IO[Nothing] <:< R): IO[Unit] =
-    returnsIOWith(ev(IO.raiseError(ex)))
-
-  /** Allows to get number of times method was executed.
-   *
-   * {{{
-   *    for {
-   *      _ <- foo.fooIO.returnsIO(IO(1))
-   *      _ <- foo.fooIO
-   *      _ <- foo.fooIO
-   *    } yield foo.fooIO.times == 2 // true
-   * }}}
-   * */
-  def times: Int = delegate.times
-
-  /** Allows to get number of times method was executed. Returns IO.
-   *
-   * {{{
-   *    for {
-   *      _ <- foo.fooIO.returnsIO(IO(1))
-   *      _ <- foo.fooIO
-   *      _ <- foo.fooIO
-   *      fooIOTimes <- foo.fooIO.timesIO
-   *    } yield fooIOTimes == 2 // true
-   * }}}
-   * */
-  def timesIO: IO[Int] = IO(times)
-
-
-  /** Returns true if this method was called before other method. */
-  def isBefore(other: StubbedMethod.Order)(implicit callLog: CallLog): Boolean =
-    delegate.isBefore(other)
-    
-  /** Returns true if this method was called after other method. */
-  def isAfter(other: StubbedMethod.Order)(implicit callLog: CallLog): Boolean =
-    delegate.isAfter(other)
-
-  /** Returns string representation of method.
-   *  Representation currently depends on scala version.
-   */
-  def asString: String = delegate.asString
-
-  override def toString: String = asString
-}
-
-/**
- * Representation of stubbed method with arguments.
+ * Representation of stubbed method
  *
  * [[CatsEffectStubs]] interface provides implicit conversion from selected method to StubbedMethodIO.
  * {{{
  *   trait Foo:
+ *     def foo0: IO[String]
  *     def foo(x: Int): IO[String]
  *     def bar(x: Int, y: String): IO[Int]
  *
@@ -145,12 +17,14 @@ class StubbedIOMethod0[R](delegate: StubbedMethod0[R]) extends StubbedMethod0[R]
  *
  * Scala 3
  * {{{
+ *   val foo0Stubbed: StubbedMethod[Unit, IO[String]] = foo.foo0
  *   val fooStubbed: StubbedMethod[Int, IO[String]] = foo.foo
  *   val barStubbed: StubbedMethod[(Int, String), IO[Int]] = foo.bar
  * }}}
  *
  * Scala 2
  * {{{
+ *   val foo0Stubbed: StubbedMethod[Unit, IO[String]] = foo.foo0
  *   val fooStubbed: StubbedMethod[Int, IO[String]] = foo.foo _
  *   val barStubbed: StubbedMethod[(Int, String), IO[Int]] = foo.bar _
  * }}}
@@ -326,6 +200,48 @@ class StubbedIOMethod[A, R](delegate: StubbedMethod[A, R]) extends StubbedMethod
 
   def returnsWhen(pf: PartialFunction[A, R]): Unit = delegate.returnsWhen(pf)
 
+  /** Allows to set result depending on call number starting from 1
+   *
+   * Scala 3
+   * {{{
+   *   foo.bar.returnsOnCall:
+   *     case 1 | 2 => IO(0)
+   *     case _ => IO(1)
+   *  }}}* Scala 2
+   * {{{
+   *   (foo.bar _).returnsOnCall {
+   *     case 1 | 2 => IO(0)
+   *     case _ => IO(1)
+   *   }
+   * }}}
+   *
+   * */
+  def returnsOnCall(f: Int => R): Unit = delegate.returnsOnCall(f)
+
+  /** Allows to set result depending on call number starting from 1. Returns IO
+   *
+   * Scala 3
+   * {{{
+   *   for
+   *     _ <- foo.bar.returnsIOOnCall:
+   *       case 1 | 2 => IO(0)
+   *       case _ => IO(1)
+   *   yield ()
+   *   }}}
+   * Scala 2
+   *
+   * {{{
+   *   for {
+   *     _ <- foo.bar.returnsIOOnCall {
+   *       case 1 | 2 => IO(0)
+   *       case _ => IO(1)
+   *     }
+   *   } yield ()
+   * }}}
+   *
+   * */
+  def returnsIOOnCall(f: Int => R): IO[Unit] = IO(delegate.returnsOnCall(f))
+
   /** Allows to get number of times method was executed.
    *
    *  Scala 3
@@ -371,11 +287,11 @@ class StubbedIOMethod[A, R](delegate: StubbedMethod[A, R]) extends StubbedMethod
   def calls: List[A] = delegate.calls
 
   /** Returns true if this method was called before other method. */
-  def isBefore(other: StubbedMethod.Order)(implicit callLog: CallLog): Boolean =
+  def isBefore(other: StubbedMethod[_, _])(implicit callLog: CallLog): Boolean =
     delegate.isBefore(other)
 
   /** Returns true if this method was called after other method. */
-  def isAfter(other: StubbedMethod.Order)(implicit callLog: CallLog): Boolean =
+  def isAfter(other: StubbedMethod[_, _])(implicit callLog: CallLog): Boolean =
     delegate.isAfter(other)
 
   /** Returns string representation of method.

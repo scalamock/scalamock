@@ -1,6 +1,6 @@
 package newapi
 
-import org.scalamock.stubs.{CallLog, Stubs, StubbedMethod, StubbedMethod0}
+import org.scalamock.stubs.{CallLog, Stubs, StubbedMethod}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -107,5 +107,18 @@ class StubbedMethodSpec extends AnyFlatSpec with Matchers with Stubs {
     (testStub.twoArgs _).isAfter(testStub.oneArg _) should be(true)
     (testStub.twoArgs _).isBefore(testStub.oneArg _) should be(false)
     (testStub.oneArg _).isAfter(testStub.twoArgs _) should be(false)
+  }
+
+  it should "set result depending on number of call" in {
+    val testStub = stub[TestTraitWithArgs]
+
+    (testStub.oneArg _).returnsOnCall {
+      case 1 => "1"
+      case _ => "2"
+    }
+
+    testStub.oneArg(100) shouldBe "1"
+    testStub.oneArg(100) shouldBe "2"
+    testStub.oneArg(100) shouldBe "2"
   }
 }

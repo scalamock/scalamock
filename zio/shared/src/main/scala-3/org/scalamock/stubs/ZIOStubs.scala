@@ -1,6 +1,6 @@
 package org.scalamock.stubs
 
-import org.scalamock.stubs.{StubbedZIOMethod, StubbedZIOMethod0}
+import org.scalamock.stubs.StubbedZIOMethod
 
 import scala.language.implicitConversions
 import zio.*
@@ -18,14 +18,14 @@ trait ZIOStubs extends StubsBase {
   }
   final given ZIOStubIO = ZIOStubIO()
 
-  implicit inline def stubbed[E, A](inline f: => IO[E, A]): StubbedZIOMethod0[IO[E, A]] =
-    StubbedZIOMethod0[IO[E, A]](stubbed00Impl[IO[E, A]](f))
+  implicit inline def stubbed[E, A](inline f: => IO[E, A]): StubbedZIOMethod[Unit, IO[E, A]] =
+    StubbedZIOMethod[Unit, IO[E, A]](stubbed00Impl[IO[E, A]](f))
 
-  implicit inline def stubbed[R](inline f: => Future[R]): StubbedMethod0[Future[R]] =
-    StubbedZIOMethod0[Future[R]](stubbed00Impl[Future[R]](f))
+  implicit inline def stubbed[R](inline f: => Future[R]): StubbedZIOMethod[Unit, Future[R]] =
+    StubbedZIOMethod[Unit, Future[R]](stubbed00Impl[Future[R]](f))
 
-  implicit inline def stubbed[T1, R](inline f: () => R)(using R =:= R): StubbedZIOMethod0[R] =
-    StubbedZIOMethod0[R](stubbed0Impl[R](f))
+  implicit inline def stubbed[T1, R](inline f: () => R)(using R =:= R): StubbedZIOMethod[Unit, R] =
+    StubbedZIOMethod[Unit, R](stubbed0Impl[R](f))
 
   implicit inline def stubbed[T1, R](inline f: T1 => R)(using (T1, R) =:= (T1, R)): StubbedZIOMethod[T1, R] =
     StubbedZIOMethod[T1, R](stubbed1Impl[T1, R](f))

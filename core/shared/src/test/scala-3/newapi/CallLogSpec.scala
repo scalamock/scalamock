@@ -3,7 +3,6 @@ package newapi
 import org.scalamock.stubs.{CallLog, Stubs}
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
-import org.scalamock.stubs.StubbedMethod0
 
 class CallLogSpec extends AnyFunSpec with Matchers with Stubs {
   trait FirstTrait {
