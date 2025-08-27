@@ -1,7 +1,7 @@
 package newapi
 
 import com.paulbutcher.test.{PolymorphicTrait, SpecializedClass, SpecializedClass2, TestClass, TestTrait}
-import org.scalamock.stubs.Stubs
+import org.scalamock.stubs.{Stubs, StubNotImplementedError}
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import some.other.pkg.SomeOtherClass
@@ -1227,10 +1227,10 @@ class NewApiSpec extends AnyFunSpec, Matchers, Stubs:
       case 42 => "the answer to everything"
 
     m.oneParam(42) shouldBe "the answer to everything"
-    the[NotImplementedError] thrownBy {
+    the[StubNotImplementedError] thrownBy {
       m.oneParam(100)
     } should have message
-      "<stub-102> TestTrait.oneParam(x: Int)String not registered for 100"
+      "Implementation is missing for [<stub-102> TestTrait.oneParam(x: Int)String] and argument [100]"
   }
 
   it("returnsWhen cope with 2-param method") {
@@ -1241,10 +1241,10 @@ class NewApiSpec extends AnyFunSpec, Matchers, Stubs:
 
     m.twoParams(1, 2.3) shouldBe "nice"
     m.twoParams(4, 5.6) shouldBe "cool"
-    the[NotImplementedError] thrownBy {
+    the[StubNotImplementedError] thrownBy {
       m.twoParams(1, 1.1)
     } should have message
-      "<stub-103> TestTrait.twoParams(x: Int, y: Double)String not registered for (1,1.1)"
+      "Implementation is missing for [<stub-103> TestTrait.twoParams(x: Int, y: Double)String] and argument [(1,1.1)]"
   }
 
   it("returnsWhen cope with curried method") {
@@ -1253,8 +1253,8 @@ class NewApiSpec extends AnyFunSpec, Matchers, Stubs:
       case (123, 45.6) => "789"
 
     m.curried(123)(45.6) shouldBe "789"
-    the[NotImplementedError] thrownBy {
+    the[StubNotImplementedError] thrownBy {
       m.curried(654)(3.21)
     } should have message
-      "<stub-104> TestTrait.curried(x: Int)(y: Double)String not registered for (654,3.21)"
+      "Implementation is missing for [<stub-104> TestTrait.curried(x: Int)(y: Double)String] and argument [(654,3.21)]"
   }

@@ -1,7 +1,7 @@
 package newapi
 
 import com.paulbutcher.test._
-import org.scalamock.stubs.Stubs
+import org.scalamock.stubs.{Stubs, StubNotImplementedError}
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import some.other.pkg.SomeOtherClass
@@ -1131,12 +1131,13 @@ class NewApiSpec extends AnyFunSpec with Matchers with Stubs {
     m.oneParam(42) shouldBe "the answer to everything"
 
     val obtained =
-      intercept[NotImplementedError] {
+      intercept[StubNotImplementedError] {
         m.oneParam(100)
       }.getMessage
     // Exact error message varies in Scala 2.12 and 2.13
     obtained should {
-      include("TestTrait.oneParam(x: Int)") and endWith("String not registered for 100")
+      startWith("Implementation is missing for [") and
+        include("TestTrait.oneParam(x: Int)") and endWith("] and argument [100]")
     }
   }
 
@@ -1151,12 +1152,16 @@ class NewApiSpec extends AnyFunSpec with Matchers with Stubs {
     m.twoParams(4, 5.6) shouldBe "cool"
 
     val obtained =
-      intercept[NotImplementedError] {
+      intercept[StubNotImplementedError] {
         m.twoParams(1, 1.1)
       }.getMessage
     // Exact error message varies in Scala 2.12 and 2.13
     // Also note that Double can be formatted differently on JVM and JS.
-    obtained should (include("TestTrait.twoParams(x: Int, y: Double)") and endWith("String not registered for (1,1.1)"))
+    obtained should {
+      startWith("Implementation is missing for [") and
+        include("TestTrait.twoParams(x: Int, y: Double)") and
+        endWith("] and argument [(1,1.1)]")
+    }
   }
 
   it("returnsWhen cope with curried method") {
@@ -1167,11 +1172,15 @@ class NewApiSpec extends AnyFunSpec with Matchers with Stubs {
     m.curried(123)(45.6) shouldBe "789"
 
     val obtained =
-      intercept[NotImplementedError] {
+      intercept[StubNotImplementedError] {
         m.curried(654)(3.21)
       }.getMessage
     // Exact error message varies in Scala 2.12 and 2.13
     // Also note that Double can be formatted differently on JVM and JS.
-    obtained should (include("TestTrait.curried(x: Int)(y: Double)") and endWith("String not registered for (654,3.21)"))
+    obtained should {
+      startWith("Implementation is missing for [") and
+        include("TestTrait.curried(x: Int)(y: Double)") and
+        endWith("] and argument [(654,3.21)]")
+    }
   }
 }

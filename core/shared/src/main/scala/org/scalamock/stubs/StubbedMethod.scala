@@ -100,10 +100,10 @@ trait StubbedMethod[A, R] {
    *   }
    * }}}
    * If the stubbed method is called with an argument for which the partial function is not defined,
-   * then a `NotImplementedError` will be thrown:
+   * then a `StubNotImplementedException` will be thrown:
    * {{{
    *   foo.fooBar((false, "bar")) // returns "false"
-   *   foo.fooBar((false, "foo")) // throws NotImplementedError
+   *   foo.fooBar((false, "foo")) // throws StubNotImplementedException
    * }}}
    *
    * @param pf partial function from arguments of type `A` to result of type `R`
@@ -268,7 +268,7 @@ object StubbedMethod {
           callsRef.updateAndGet(args :: _)
           resultRef.get() match {
             case Some(f) => f(args)
-            case None => throw new NotImplementedError(s"Implementation is missing for [$asString]")
+            case None => throw StubNotImplementedError(this)
           }
         case Some(io) =>
           io.flatMap(
@@ -279,7 +279,7 @@ object StubbedMethod {
           ) { _ =>
             resultRef.get() match {
               case Some(f) => f(args).asInstanceOf[io.F[Any, Any]]
-              case None => io.die(new NotImplementedError(s"Implementation is missing for [$asString]"))
+              case None => io.die(StubNotImplementedError(this))
             }
           }.asInstanceOf[R]
       }
@@ -298,7 +298,7 @@ object StubbedMethod {
     override def returnsWhen(pf: PartialFunction[A, R]): Unit = {
       val f: A => R =
         pf.orElse { case a =>
-          throw new NotImplementedError(s"$asString not registered for $a")
+          throw StubNotImplementedError(this, a)
         }
 
       returns(f)
