@@ -1195,9 +1195,14 @@ class NewApiSpec extends AnyFunSpec, Matchers, Stubs:
     m.withOneDefaultParam("a") shouldBe "one"
     m.withOneDefaultParam("a", "default") shouldBe "one"
     m.withOneDefaultParam("a", "other") shouldBe "two"
+
+    the[StubNotImplementedError] thrownBy {
+      m.withTwoDefaultParams("x", "y") // not stubbed
+    } should have message
+      "Implementation is missing for [<stub-99> ClassHavingMethodsWithDefaultParams.withTwoDefaultParams(a: String, b: String, c: Int)String] and argument [(x,y,42)]"
   }
 
-  it("stub class methods with two default parameters"):
+  it("stub class methods with two default parameters") {
     val m = stub[ClassHavingMethodsWithDefaultParams]
 
     m.withTwoDefaultParams.returns:
@@ -1210,6 +1215,12 @@ class NewApiSpec extends AnyFunSpec, Matchers, Stubs:
     m.withTwoDefaultParams("a", "default", 42) shouldBe "one"
     m.withTwoDefaultParams("a", "other", 99) shouldBe "two"
 
+    the[StubNotImplementedError] thrownBy {
+      m.withOneDefaultParam("x") // not stubbed
+    } should have message
+      "Implementation is missing for [<stub-100> ClassHavingMethodsWithDefaultParams.withOneDefaultParam(a: String, b: String)String] and argument [(x,default)]"
+  }
+
   it("stub trait methods with type param and default parameters") {
     val m = stub[TraitHavingMethodsWithDefaultParams]
 
@@ -1219,6 +1230,11 @@ class NewApiSpec extends AnyFunSpec, Matchers, Stubs:
 
     m.withDefaultParamAndTypeParam[Int]("default", 5) shouldBe 5
     m.withDefaultParamAndTypeParam[Int]("defaul", 5) shouldBe 6
+
+    the[StubNotImplementedError] thrownBy {
+      m.withAllDefaultParams() // not stubbed
+    } should have message
+      "Implementation is missing for [<stub-101> TraitHavingMethodsWithDefaultParams.withAllDefaultParams(a: String, b: CaseClass)String] and argument [(default,CaseClass(42))]"
   }
 
   it("returnsWhen cope with 1-param method") {
