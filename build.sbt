@@ -8,7 +8,7 @@ val commonSettings = Defaults.coreDefaultSettings ++ Seq(
    *  Symbol.newClass is marked experimental, so we should use @experimental annotation in every test suite.
    *  3.3.0 has a bug so we can omit this annotation
    */
-  scalaVersion := "3.3.0",
+  scalaVersion := "3.3.6",
   scalacOptions ++= Seq("-deprecation", "-unchecked", "-feature")
 )
 
