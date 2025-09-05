@@ -30,8 +30,10 @@ permalink: /classic/features
 
 ---
 
-All scalamock features are brought into scope via `org.scalamock.scalatest.MockFactory` and `org.scalamock.specs2.MockContext`
-which mix core interface `org.scalamock.MockFactoryBase`.
+All scalamock features are brought into scope via:
+
+- `org.scalamock.scalatest.MockFactory` and `org.scalamock.specs2.MockContext` — which mix core interface `org.scalamock.MockFactoryBase`
+- `org.scalamock.ziotest.ScalamockZIOSpec` — for ZIO Test integration
 
 There are:
 

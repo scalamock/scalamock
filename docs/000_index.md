@@ -170,6 +170,37 @@ class MySpec extends Specification {
 }
 ```
 
+### Classic + ZIO Test
+
+```scala
+//> using dep dev.zio::zio:2.1.19
+//> using test.dep dev.zio::zio-test:2.1.19
+//> using test.dep org.scalamock::scalamock-zio:7.4.1
+
+import org.scalamock.ziotest._
+import zio._
+import zio.test._
+
+trait UserService {
+  def getUserName(id: Int): Task[String]
+}
+
+object UserServiceTest extends ScalamockZIOSpec {
+  
+  override def spec: Spec[TestEnvironment, Any] =
+    suite("UserService tests")(
+      test("should return user name") {
+        for {
+          _ <- ZIO.serviceWith[UserService] { mock =>
+            (mock.getUserName _).expects(42).returnsZIO("John")
+          }
+          userName <- ZIO.serviceWithZIO[UserService](_.getUserName(42))
+        } yield assertTrue(userName == "John")
+      }.provide(ZLayer.succeed(mock[UserService]))
+    )
+}
+```
+
 ### Stubs + munit
 
 ```scala

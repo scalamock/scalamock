@@ -13,7 +13,7 @@ It provides a powerful and flexible way to create and use mocks and stubs in you
 
 It offers:
 - **Two mocking styles**: Expectations-First Style (mocks) and Record-then-Verify (stubs)
-- **Scalatest and Spec2 integration**
+- **Scalatest, Spec2 and ZIO Test integration**
 - **Powerful features**: Advanced expectations, call ordering, argument matchers and more
 
 
@@ -28,7 +28,7 @@ Usually - you should create some fixture/wiring to be reused in each test-case.
 To use **scalamock** with **scalatest** - your suite should mixin `org.scalamock.scalatest.MockFactory`
 
 ```scala
-//> using test.dep org.scalamock::scalamock:7.3.2
+//> using test.dep org.scalamock::scalamock:7.4.1
 //> using test.dep org.scalatest::scalatest:3.2.19
 
 import org.scalamock.scalatest.MockFactory
@@ -77,7 +77,7 @@ class ExchangeRateListingTest extends AsyncFlatSpec with AsyncMockFactory {
 To use **scalamock** with **specs2** you should run each test case in a separate fixture context that mixins `org.scalamock.specs2.MockContext`
 
 ```scala
-//> using test.dep org.scalamock::scalamock:7.3.2
+//> using test.dep org.scalamock::scalamock:7.4.1
 //> using test.dep org.specs2::specs2-core:5.6.3
 
 import org.scalamock.specs2.MockContext
@@ -98,4 +98,51 @@ class MySpec extends Specification {
     }
   }
 }
+```
+
+### ZIO Test
+
+To use **scalamock** with **ZIO Test**, you should extend `org.scalamock.ziotest.ScalamockZIOSpec`. This integration provides a classic mocking style with ZIO-specific enhancements.
+
+For detailed ZIO Test integration guide, see [ZIO Test Integration](/classic/zio-test/).
+
+```scala
+//> using dep dev.zio::zio:2.1.19
+//> using test.dep org.scalamock::scalamock-zio:7.4.1
+//> using test.dep dev.zio::zio-test:2.1.19
+
+import org.scalamock.ziotest._
+import zio._
+import zio.test._
+
+trait UserService {
+  def getUserName(id: Int): UIO[String]
+}
+
+class ApiService(userService: UserService) {
+  def getGreeting(id: Int): UIO[String] =
+    userService.getUserName(id).map(name => s"Hello, $name!")
+}
+
+object ApiService {
+  val layer = ZLayer.derive[ApiService]
+}
+
+object ApiServiceSpec extends ScalamockZIOSpec {
+
+  override def spec: Spec[TestEnvironment, Any] =
+    suite("ApiServiceSpec")(
+      test("return greeting")(
+        for {
+          // Setup expectations - how mock should be called and what it returns
+          _ <- ZIO.serviceWith[UserService] { mock =>
+            (mock.getUserName _).expects(4).returnsZIO("Agent Smith")
+          }
+          // Call code under test
+          result <- ZIO.serviceWithZIO[ApiService](_.getGreeting(4))
+        } yield assertTrue(result == "Hello, Agent Smith!")
+      )
+    ).provide(ApiService.layer, mock[UserService]) // Provide required mock for the test
+}
+
 ```
