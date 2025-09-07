@@ -9,7 +9,7 @@ val commonSettings = Defaults.coreDefaultSettings ++ Seq(
    *  3.3.0 has a bug so we can omit this annotation
    */
   scalaVersion := "3.3.0",
-  scalacOptions ++= Seq("-deprecation", "-unchecked", "-feature", "-release:8")
+  scalacOptions ++= Seq("-deprecation", "-unchecked", "-feature")
 )
 
 lazy val root = project.in(file("."))
@@ -105,6 +105,14 @@ def crossScalaSettings = {
       CrossVersion.partialVersion(scalaVersion.value) match {
         case Some((2, _)) =>
           Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value)
+        case _ =>
+          Seq.empty
+      }
+    },
+    scalacOptions ++= {
+      CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((2, _)) =>
+          Seq("-Xlint:adapted-args", "-Xfatal-warnings")
         case _ =>
           Seq.empty
       }

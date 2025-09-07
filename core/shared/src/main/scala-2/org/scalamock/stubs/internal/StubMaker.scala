@@ -130,11 +130,10 @@ class StubMaker[C <: Context](val ctx: C) {
           castTo(literal(null), mt))
       } else {
         val args = paramss(mt).flatten map { p => Ident(TermName(p.name.toString)) }
-        val nonEmptyArgs = if (args.isEmpty) List(Literal(Constant(()))) else args
         val body = applyListOn(
           Select(This(anon), mockFunctionName(m)),
           "impl",
-          nonEmptyArgs
+          List(tupledArgs(args))
         )
         methodImpl(m, mt, body)
       }
@@ -146,6 +145,34 @@ class StubMaker[C <: Context](val ctx: C) {
       assert(index >= 0)
       TermName("stub$" + m.name + "$" + index)
     }
+
+    def tupledArgs(args: List[Tree]): Tree =
+      args match {
+        case Nil => Literal(Constant(()))
+        case List(arg0) => arg0
+        case List(arg0, arg1) => q"($arg0, $arg1)"
+        case List(arg0, arg1, arg2) => q"($arg0, $arg1, $arg2)"
+        case List(arg0, arg1, arg2, arg3) => q"($arg0, $arg1, $arg2, $arg3)"
+        case List(arg0, arg1, arg2, arg3, arg4) => q"($arg0, $arg1, $arg2, $arg3, $arg4)"
+        case List(arg0, arg1, arg2, arg3, arg4, arg5) => q"($arg0, $arg1, $arg2, $arg3, $arg4, $arg5)"
+        case List(arg0, arg1, arg2, arg3, arg4, arg5, arg6) => q"($arg0, $arg1, $arg2, $arg3, $arg4, $arg5, $arg6)"
+        case List(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7) => q"($arg0, $arg1, $arg2, $arg3, $arg4, $arg5, $arg6, $arg7)"
+        case List(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8) => q"($arg0, $arg1, $arg2, $arg3, $arg4, $arg5, $arg6, $arg7, $arg8)"
+        case List(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9) => q"($arg0, $arg1, $arg2, $arg3, $arg4, $arg5, $arg6, $arg7, $arg8, $arg9)"
+        case List(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10) => q"($arg0, $arg1, $arg2, $arg3, $arg4, $arg5, $arg6, $arg7, $arg8, $arg9, $arg10)"
+        case List(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11) => q"($arg0, $arg1, $arg2, $arg3, $arg4, $arg5, $arg6, $arg7, $arg8, $arg9, $arg10, $arg11)"
+        case List(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12) => q"($arg0, $arg1, $arg2, $arg3, $arg4, $arg5, $arg6, $arg7, $arg8, $arg9, $arg10, $arg11, $arg12)"
+        case List(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13) => q"($arg0, $arg1, $arg2, $arg3, $arg4, $arg5, $arg6, $arg7, $arg8, $arg9, $arg10, $arg11, $arg12, $arg13)"
+        case List(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14) => q"($arg0, $arg1, $arg2, $arg3, $arg4, $arg5, $arg6, $arg7, $arg8, $arg9, $arg10, $arg11, $arg12, $arg13, $arg14)"
+        case List(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15) => q"($arg0, $arg1, $arg2, $arg3, $arg4, $arg5, $arg6, $arg7, $arg8, $arg9, $arg10, $arg11, $arg12, $arg13, $arg14, $arg15)"
+        case List(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15, arg16) => q"($arg0, $arg1, $arg2, $arg3, $arg4, $arg5, $arg6, $arg7, $arg8, $arg9, $arg10, $arg11, $arg12, $arg13, $arg14, $arg15, $arg16)"
+        case List(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15, arg16, arg17) => q"($arg0, $arg1, $arg2, $arg3, $arg4, $arg5, $arg6, $arg7, $arg8, $arg9, $arg10, $arg11, $arg12, $arg13, $arg14, $arg15, $arg16, $arg17)"
+        case List(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15, arg16, arg17, arg18) => q"($arg0, $arg1, $arg2, $arg3, $arg4, $arg5, $arg6, $arg7, $arg8, $arg9, $arg10, $arg11, $arg12, $arg13, $arg14, $arg15, $arg16, $arg17, $arg18)"
+        case List(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15, arg16, arg17, arg18, arg19) => q"($arg0, $arg1, $arg2, $arg3, $arg4, $arg5, $arg6, $arg7, $arg8, $arg9, $arg10, $arg11, $arg12, $arg13, $arg14, $arg15, $arg16, $arg17, $arg18, $arg19)"
+        case List(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15, arg16, arg17, arg18, arg19, arg20) => q"($arg0, $arg1, $arg2, $arg3, $arg4, $arg5, $arg6, $arg7, $arg8, $arg9, $arg10, $arg11, $arg12, $arg13, $arg14, $arg15, $arg16, $arg17, $arg18, $arg19, $arg20)"
+        case List(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15, arg16, arg17, arg18, arg19, arg20, arg21) => q"($arg0, $arg1, $arg2, $arg3, $arg4, $arg5, $arg6, $arg7, $arg8, $arg9, $arg10, $arg11, $arg12, $arg13, $arg14, $arg15, $arg16, $arg17, $arg18, $arg19, $arg20, $arg21)"
+        case _ => ctx.abort(ctx.enclosingPosition, "ScalaMock: Can't handle methods with more than 22 parameters (yet)")
+      }
 
     def tupledType(args: List[Tree]): Tree = {
       args match {

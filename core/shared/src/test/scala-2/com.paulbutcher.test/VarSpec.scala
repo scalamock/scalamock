@@ -4,6 +4,7 @@ import org.scalamock.scalatest.MockFactory
 import org.scalatest.funspec.AnyFunSpec
 
 import scala.reflect.ClassTag
+import scala.language.higherKinds
 
 class VarSpec extends AnyFunSpec with MockFactory {
 

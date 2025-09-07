@@ -28,7 +28,7 @@ class MatchAnyTest extends AnyFlatSpec {
   "MatchAny" should "match anything" in {
     assert(new MatchAny === 1.0)
     assert(new MatchAny === "")
-    assert(new MatchAny === (0, 42))
+    assert(new MatchAny().equals((0, 42)))
     assert(new MatchAny === List(1, 2, 3))
   }
 }

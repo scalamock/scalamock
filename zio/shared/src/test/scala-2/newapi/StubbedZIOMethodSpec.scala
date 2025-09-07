@@ -2,7 +2,6 @@ package org.scalamock.stubs
 
 import zio._
 import zio.test._
-import org.scalamock.stubs.ZIOStubs
 
 object StubbedZIOMethodSpec extends ZIOSpecDefault with ZIOStubs {
   // Define test traits

@@ -39,7 +39,7 @@ private[scalamock] class Utils(using val quotes: Quotes):
       report.errorAndAbort("Can't mock a java class due to https://github.com/lampepfl/dotty/issues/18694. Extend it manually with scala and then mock")
 
     def asParent(tree: TypeTree): TypeTree | Term =
-      val constructorTypes = tree.tpe.dealias.typeSymbol.primaryConstructor
+      val constructorTypes = tree.tpe.typeSymbol.primaryConstructor
         .paramSymss.flatten.filter(_.isType).map(_.name)
 
       val constructorFields = tree.tpe.dealias.typeSymbol.primaryConstructor

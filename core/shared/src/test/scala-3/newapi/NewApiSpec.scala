@@ -12,6 +12,13 @@ import scala.util.{Failure, Try}
 class NewApiSpec extends AnyFunSpec, Matchers, Stubs:
 
 
+  it("compile type aliases") {
+    trait Aliased[A, B]
+
+    type AliasedImpl = Aliased[Int, Int]
+    "stub[AliasedImpl]" should compile
+  }
+
   it("not compile with other return type for methods without params") {
     val m = stub[TestTrait]
     "(() => m.nullary).returns(1)" shouldNot compile
