@@ -31,7 +31,7 @@ To use scalamock with ZIO Test, you need to add the ZIO integration dependency a
 
 **Dependency:**
 ```scala
-libraryDependencies += "org.scalamock" %% "scalamock-zio" % "7.4.1" % Test
+libraryDependencies += "org.scalamock" %% "scalamock-zio" % "7.5.0" % Test
 ```
 
 **Test Structure:**

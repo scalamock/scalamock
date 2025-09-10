@@ -108,7 +108,7 @@ For detailed ZIO Test integration guide, see [ZIO Test Integration](/classic/zio
 
 ```scala
 //> using dep dev.zio::zio:2.1.19
-//> using test.dep org.scalamock::scalamock-zio:7.4.1
+//> using test.dep org.scalamock::scalamock-zio:7.5.0
 //> using test.dep dev.zio::zio-test:2.1.19
 
 import org.scalamock.ziotest._
