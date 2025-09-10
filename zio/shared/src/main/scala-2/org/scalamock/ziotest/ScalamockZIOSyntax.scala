@@ -1,4 +1,4 @@
-// Copyright (c) ScalaMock Contributors (https://github.com/ScalaMock/ScalaMock/graphs/contributors)
+// Copyright (c) 2011-2025 ScalaMock Contributors (https://github.com/ScalaMock/ScalaMock/graphs/contributors)
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -18,19 +18,22 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package org.scalamock.clazz
+package org.scalamock.ziotest
 
-import scala.quoted.*
+import org.scalamock.clazz.ziotest.syntax.MockConvertions
 
-object MockFunctionFinder:
-  /**
-   * Given something of the structure <|o.m _|> where o is a mock object
-   * and m is a method, find the corresponding MockFunction instance
-   */
-  @scala.annotation.experimental
-  def findMockFunction[M: Type](f: Expr[Any])(using quotes: Quotes): Expr[M] =
-    val utils = MakerUtils(using quotes)
-    import utils.quotes.reflect.*
-    utils
-      .searchTermWithMethod(f.asTerm, TypeRepr.of[M].typeArgs.init)
-      .selectReflect[M](_.mockValName)
+/**
+ * Allows configuring mocks outside of test classes, if needed:
+ *
+ * {{{
+ * object MyUtils extends ScalamockZIOSyntax {
+ *   def mockGetName = ZIO.serviceWith[UserService] { mock =>
+ *     (mock.getName _).expects(4).returnsZIO("Agent Smith")
+ *   }
+ * }
+ * }}}
+ *
+ * Creating mocks and configuring Ordering can only be done in test code.
+ * The rest of the API is available through mixing in `ScalamockZIOSyntax`.
+ */
+trait ScalamockZIOSyntax extends ScalamockZIOSyntaxBase with MockConvertions

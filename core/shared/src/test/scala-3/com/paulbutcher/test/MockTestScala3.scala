@@ -110,5 +110,22 @@ class MockTestScala3 extends AnyFreeSpec with MockFactory with Matchers {
       "mock[ByName]" should compile
     }
 
+    "mock identical methods where one return type is context function" in {
+      trait Context
+
+      type ContextExample[T] = Context ?=> T
+
+      trait ExampleService {
+        def exampleMethodWithContext(a: String): ContextExample[String]
+      }
+
+      val exampleMock = mock[ExampleService]
+
+      (exampleMock.exampleMethodWithContext: String => Context ?=> String)
+        .expects(*)
+        .returns((_: Context) ?=> "foo")
+
+      exampleMock.exampleMethodWithContext("123")(using new Context {}) shouldBe "foo"
+    }
   }
 }

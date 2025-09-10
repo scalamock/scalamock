@@ -20,7 +20,7 @@
 
 package org.scalamock.stubs.internal
 
-import org.scalamock.clazz.Utils
+import org.scalamock.clazz.{MakerUtils, Utils}
 import org.scalamock.stubs.{CallLog, Stub, StubIO, StubbedMethod}
 
 import scala.annotation.{experimental, tailrec}
@@ -30,7 +30,7 @@ import scala.quoted.{Expr, Quotes, Type}
 
 private[stubs] class StubMaker(
   using Quotes
-) extends Utils:
+) extends MakerUtils:
   import quotes.reflect.*
 
   override def newApi = true
@@ -55,6 +55,8 @@ private[stubs] class StubMaker(
       decls = classSymbol =>
         methods.flatMap { method =>
           List(
+            // Creates a field to store stubbed method representation
+            // val stub$<name>$<idx>: StubbedMethod.Internal[Any, Any]
             Symbol.newVal(
               parent = classSymbol,
               name = method.stubValName,
@@ -62,24 +64,30 @@ private[stubs] class StubMaker(
               flags = Flags.EmptyFlags,
               privateWithin = Symbol.noSymbol
             ),
+            // Creates an override for the val
+            // override val <name>: type
             if method.symbol.isValDef then
               Symbol.newVal(
                 parent = classSymbol,
                 name = method.symbol.name,
-                tpe = method.tpeWithSubstitutedInnerTypesFor(classSymbol),
+                tpe = method.tpeOverride(classSymbol),
                 flags = Flags.Override,
                 privateWithin = Symbol.noSymbol
               )
             else
+              // Creates an implementation for the method, which will use StubbedMethod.Internal under the hood
+              // override def <name>(...args): type
               Symbol.newMethod(
                 parent = classSymbol,
                 name = method.symbol.name,
-                tpe = method.tpeWithSubstitutedInnerTypesFor(classSymbol),
+                tpe = method.tpeOverride(classSymbol),
                 flags = Flags.Override,
                 privateWithin = Symbol.noSymbol
               ),
           )
         } ::: List(
+          // Creates a method to clear this stub
+          // def stub$macro$clear(): Unit
           Symbol.newMethod(
             parent = classSymbol,
             name = ClearStubsMethodName,
@@ -87,6 +95,8 @@ private[stubs] class StubMaker(
             flags = Flags.EmptyFlags,
             privateWithin = Symbol.noSymbol
           ),
+          // Creates a field to store unique index for this stub
+          // val stub$macro$idx: Int
           Symbol.newVal(
             parent = classSymbol,
             name = UniqueStubIdx,
@@ -102,6 +112,9 @@ private[stubs] class StubMaker(
       cls = classSymbol,
       parents = parents,
       body = List(
+        // Creates a method to clear this stub
+        // val stub$<name>$<idx>
+        // def stub$macro$clear(): Unit = stub$<name>$<idx>.clear()
         DefDef(
           symbol = classSymbol.methodMember(ClearStubsMethodName).head,
           _ =>
@@ -117,7 +130,6 @@ private[stubs] class StubMaker(
           Some('{ $stubUniqueIndexGenerator.nextIdx() }.asTerm)
         )
       ) ::: methods.flatMap { method =>
-        val resTypeWithOverride = method.resTypeWithInnerTypesOverrideFor(classSymbol)
         List(
           ValDef(
             classSymbol.declaredField(method.stubValName),
@@ -127,7 +139,7 @@ private[stubs] class StubMaker(
                 case None => '{ None }
               }
               val idx = Ref(classSymbol.declaredField(UniqueStubIdx)).asExprOf[Int]
-              val ioOpt = Expr.summon[StubIO].filter(_.isMatches(resTypeWithOverride)) match
+              val ioOpt = Expr.summon[StubIO].filter(_.isMatches(method.rawResType)) match
                 case Some(io) => '{ Some($io) }
                 case None => '{None}
 
@@ -146,8 +158,7 @@ private[stubs] class StubMaker(
             DefDef(
               symbol = method.symbol.overridingSymbol(classSymbol),
               params => Some {
-                val resTpe = method.tpe.prepareResType(resTypeWithOverride, params)
-                resTpe.asType match
+                method.prepareResType(classSymbol, params).asType match
                   case '[res] =>
                     val tupledArgs = tupled(params.flatMap {_.collect { case term: Term => term }}).asExpr
                     '{ ${ method.stubbedMethodRef(classSymbol) }.impl(${tupledArgs}).asInstanceOf[res] }

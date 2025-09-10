@@ -4,7 +4,7 @@
 
 ScalaMock is native Scala mocking framework.
 
-Documentation is available at [scalamock.org](https://scalamock.org/)
+Documentation is available on [scalamock.org](https://scalamock.org/)
 
 
 ## sbt dependencies
@@ -20,7 +20,7 @@ libraryDependencies ++= Seq(
 )
 ```
 
-Dependencies for other build tools can be found at our website.
+Dependencies for other build tools can be found on our website.
 
 ## Ask for help
 

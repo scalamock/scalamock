@@ -30,7 +30,7 @@ private[clazz] object MockMaker:
   val MockDefaultNameValName = "mock$special$mockName"
 
   def instance[T: Type](mockType: MockType, ctx: Expr[MockContext], name: Option[Expr[String]])(using quotes: Quotes): Expr[T] =
-    val utils = Utils(using quotes)
+    val utils = MakerUtils(using quotes)
     import utils.quotes.reflect.*
     val tpe = TypeRepr.of[T]
     val mockableDefinitions = utils.MockableDefinitions(tpe)
@@ -63,7 +63,7 @@ private[clazz] object MockMaker:
             Symbol.newVal(
               parent = classSymbol,
               name = definition.symbol.name,
-              tpe = definition.tpeWithSubstitutedInnerTypesFor(classSymbol),
+              tpe = definition.tpeOverride(classSymbol),
               flags = Flags.Override,
               privateWithin = Symbol.noSymbol
             )
@@ -71,7 +71,7 @@ private[clazz] object MockMaker:
             Symbol.newMethod(
               parent = classSymbol,
               name = definition.symbol.name,
-              tpe = definition.tpeWithSubstitutedInnerTypesFor(classSymbol),
+              tpe = definition.tpeOverride(classSymbol),
               flags = Flags.Override,
               privateWithin = Symbol.noSymbol
             )
@@ -148,8 +148,7 @@ private[clazz] object MockMaker:
                         ),
                         "asInstanceOf"
                       ),
-                      definition.tpe
-                        .prepareResType(definition.resTypeWithInnerTypesOverrideFor(classSymbol), args)
+                      definition.prepareResType(classSymbol, args)
                         .asType match { case '[t] => List(TypeTree.of[t]) }
                     )
                   )

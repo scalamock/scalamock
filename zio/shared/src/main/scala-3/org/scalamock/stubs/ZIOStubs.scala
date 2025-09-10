@@ -18,7 +18,7 @@ trait ZIOStubs extends StubsBase {
   }
   final given ZIOStubIO = ZIOStubIO()
 
-  implicit inline def stubbed[E, A](inline f: => IO[E, A]): StubbedZIOMethod[Unit, IO[E, A]] =
+  implicit inline def stubbed[E, A](inline f: => IO[E, A])(using A =:= A, E =:= E): StubbedZIOMethod[Unit, IO[E, A]] =
     StubbedZIOMethod[Unit, IO[E, A]](stubbed00Impl[IO[E, A]](f))
 
   implicit inline def stubbed[R](inline f: => Future[R]): StubbedZIOMethod[Unit, Future[R]] =
