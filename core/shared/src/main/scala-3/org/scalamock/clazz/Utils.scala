@@ -46,9 +46,76 @@ private[scalamock] class Utils(using val quotes: Quotes):
           case poly: PolyType => poly.paramTypes.lengthCompare(appliedTypes) == 0
           case _ => appliedTypes.isEmpty
 
+      def matchTypeConstructor(actual: TypeRepr, expected: TypeRepr): Boolean = {        
+        // Extract type constructor symbols
+        val actualSym = actual.typeSymbol
+        val expectedSym = expected.typeSymbol
+        // Check if they're the same type constructor or if actual is a subtype
+        actualSym == expectedSym || {
+          // Check if actual's type constructor conforms to expected
+          actual.baseType(expectedSym) != NoPrefix
+        }
+      }
+
+      def matchTypes(actualTypes: List[TypeRepr], expectedTypes: List[TypeRepr]): Boolean = {        
+        if (actualTypes.length != expectedTypes.length) return false
+        actualTypes.zip(expectedTypes).forall(matchType)
+      }
+      
+      def matchType(actual: TypeRepr, expected: TypeRepr): Boolean =
+        if (actual <:< expected) return true
+
+        expected match {
+          // Handle type parameters like F[_]
+          case AppliedType(expectedTyCon, expectedArgs) =>
+            actual match {
+              case AppliedType(actualTyCon, actualArgs) =>
+                // Check if type constructors match
+                val tyConMatch = actualTyCon.typeSymbol == expectedTyCon.typeSymbol ||
+                              actualTyCon <:< expectedTyCon ||
+                              matchTypeConstructor(actualTyCon, expectedTyCon)
+                
+                if (!tyConMatch) return false
+                
+                // Check if args match (handling wildcards)
+                if (expectedArgs.length != actualArgs.length) return false
+                
+                expectedArgs.zip(actualArgs).forall { case (expArg, actArg) =>
+                  expArg match {
+                    // Wildcard bounds like _ >: Nothing <: Any
+                    case TypeBounds(lo, hi) =>
+                      // Any concrete type fits within Nothing <: _ <: Any
+                      actArg match {
+                        case TypeBounds(actLo, actHi) =>
+                          // Both are bounds, check compatibility
+                          lo <:< actLo && actHi <:< hi
+                        case _ =>
+                          // Concrete type must fit within bounds
+                          lo <:< actArg && actArg <:< hi
+                      }
+                    case _ =>
+                      // Non-wildcard argument must match
+                      matchType(actArg, expArg)
+                  }
+                }
+                
+              case _ => false
+            }
+          
+          // Handle type parameters themselves (like F, Container, etc.)
+          case param: TypeRepr if param.typeSymbol.isTypeParam =>
+            // Type parameter without application - check if actual has same shape
+            actual match {
+              case AppliedType(_, _) => true // Any applied type matches F[_]
+              case _ => actual.typeSymbol.isTypeParam
+            }
+          
+          case _ => false
+        }
+
       def typesMatch(method: MockableDefinition, paramTypes: List[TypeRepr]): Boolean =
         paramTypes.lengthCompare(method.parameterTypes) == 0 &&
-          paramTypes.zip(method.parameterTypes).forall(_ <:< _)
+          paramTypes.zip(method.parameterTypes).forall(matchType)
 
       MockableDefinitions(tpe)
         .filter(m => m.symbol.name == name && typesMatch(m, paramTypes) && appliedTypesMatch(m, appliedTypes))
