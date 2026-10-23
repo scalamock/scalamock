@@ -184,13 +184,22 @@ private[scalamock] class Utils(using val quotes: Quotes):
             !sym.name.contains("$default$") &&
             !sym.hasAnnotation(TypeRepr.of[scala.deprecatedOverriding].typeSymbol)
         )
-        .zipWithIndex
-        .map((sym, idx) => MockableDefinition(idx, sym, tpe))
+
+      // Number each method among its own overloads, ordered by erased signature, rather than by its
+      // position among all of the type's members. That position follows the compiler's name hashes,
+      // which differ between compiler runs, so a mock class and an expectation compiled in different
+      // runs (incremental compilation, or a mock created in one module and used in another) would
+      // otherwise look for different field names. Overloads of one name can't share an erased signature.
+      def erasedSignature(sym: Symbol): String =
+        val signature = sym.signature
+        signature.paramSigs.mkString(",") + ")" + signature.resultSig
+      val overloadIndex: Map[Symbol, Int] =
+        methods.groupBy(_.name).values.flatMap(_.sortBy(erasedSignature).zipWithIndex).toMap
 
       val vals = tpe.typeSymbol.fieldMembers
         .filter(_.flags.is(Flags.Deferred))
         .map(sym => MockableDefinition(0, sym, tpe))
-      methods ++ vals
+      methods.map(sym => MockableDefinition(overloadIndex(sym), sym, tpe)) ++ vals
 
   extension (tpe: TypeRepr)
     def collectTypes: (List[TypeRepr], TypeRepr) =
