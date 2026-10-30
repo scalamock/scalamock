@@ -105,7 +105,8 @@ private[scalamock] class Utils(using val quotes: Quotes):
           case other => s"${selected.name}: ${other.show}"
       def isReceiverMember =
         tpe.typeSymbol.methodMembers.contains(selected) || tpe.typeSymbol.fieldMembers.contains(selected)
-      val definitions = MockableDefinitions(tpe)
+      // Lookup by symbol doesn't need the emission order; the argument-type fallback keeps traversal order.
+      val definitions = inTraversalOrder(tpe)
       definitions.find(_.symbol == selected) match
         case Some(definition) if matchesSignature(definition, paramTypes, appliedTypes) =>
           definition
@@ -219,7 +220,7 @@ private[scalamock] class Utils(using val quotes: Quotes):
         Some("it is annotated with @deprecatedOverriding")
       else None
 
-    def apply(tpe: TypeRepr): List[MockableDefinition] =
+    private def inTraversalOrder(tpe: TypeRepr): List[MockableDefinition] =
       val methods = tpe.typeSymbol.methodMembers.filter(exclusionReason(_).isEmpty)
 
       // Number each method among its own overloads, ordered by erased signature, rather than by its
@@ -237,6 +238,12 @@ private[scalamock] class Utils(using val quotes: Quotes):
         .filter(exclusionReason(_).isEmpty)
         .map(sym => MockableDefinition(0, sym, tpe))
       methods.map(sym => MockableDefinition(overloadIndex(sym), sym, tpe)) ++ vals
+
+    def apply(tpe: TypeRepr): List[MockableDefinition] =
+      val definitions = inTraversalOrder(tpe)
+      // The order generated members are emitted in. Native JS overload dispatch currently depends on the
+      // final property initializer, so JS types keep traversal order until that dispatch bug is fixed.
+      if isJsAny(tpe) then definitions else definitions.sortBy(d => (d.symbol.name, d.idx))
 
   extension (tpe: TypeRepr)
     def collectTypes: (List[TypeRepr], TypeRepr) =

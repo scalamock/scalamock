@@ -26,7 +26,15 @@ For each method in provided definition scalamock generates a `StubbedMethod[Args
 When method is called - scalamock gets corresponding `StubbedMethod` and calls it's `impl` method with provided arguments,
 which updates internal state for each corresponding method.
 
-Each method has a unique index of method from provided definition. The order depends on compiler.
+In Scala 3, each method gets an index within its own name group, numbered by erased signature,
+and a deferred val takes index 0. Adding an unrelated member therefore changes no existing field
+name. Adding another overload can still change a method's index, so configuring a mock through a
+supertype whose overloads differ from the mocked class's can reach another member's mock function.
+
+For ordinary Scala types, definitions are emitted in member-name/index order. Native Scala.js types
+retain compiler traversal order because their existing JS property dispatcher overwrites earlier
+overloads; fixing that dispatch is separate from deterministic member emission. The examples below
+use the Scala 3 naming scheme.
 
 Expectations and stub configuration use the overload the compiler already selected in
 `(m.foo(_: A))` or `m.foo`. When that symbol is one of the receiver's mockable definitions, it is
@@ -48,18 +56,18 @@ If there are multiple arguments - scalamock tuples them.
 
 ```scala
 val foo = new Foo:
+  val stub$curried$0 = StubbedMethod[Any, Any](...)
   val stub$oneArg$0 = StubbedMethod[Any, Any](...)
-  val stub$twoArgs$1 = StubbedMethod[Any, Any](...)
-  val stub$curried$2 = StubbedMethod[Any, Any](...)
+  val stub$twoArgs$0 = StubbedMethod[Any, Any](...)
   
   override def oneArg(x: Int): Int =
-    stub$foo$0.impl(x).asInstanceOf[Int]
+    stub$oneArg$0.impl(x).asInstanceOf[Int]
     
   override def twoArgs(x: Int, y: String): String =
-    stub$twoArgs$1.impl((x, y)).asInstanceOf[String]
+    stub$twoArgs$0.impl((x, y)).asInstanceOf[String]
     
   override def curried(x: Int)(y: String): Int =
-    stub$curried$2.impl((x, y)).asInstanceOf[Int]
+    stub$curried$0.impl((x, y)).asInstanceOf[Int]
 ```
 
 Note that internally scalamock stores `StubbedMethod[Args, Result]` as `StubbedMethod[Any, Any]` to simplify object generation.
@@ -83,7 +91,7 @@ Example:
 
 ### Ability to reset a stub
 
-Each stub generates a `stub$macro$clear()` method that clears all recorded calls and results.
+Each stub generates a `stubs$macro$clear()` method that clears all recorded calls and results.
 
 It calls `clear()` method on each `StubbedMethod`.
 
@@ -93,10 +101,10 @@ In such case your test cases should run sequentially.
 
 ```scala
 val foo = new Foo:
-  def stub$macro$clear(): Unit =
+  def stubs$macro$clear(): Unit =
+    stub$curried$0.clear()
     stub$oneArg$0.clear()
-    stub$twoArgs$1.clear()
-    stub$curried$2.clear()
+    stub$twoArgs$0.clear()
 ```
 
 ## Classic
@@ -117,18 +125,18 @@ So internally it looks like this:
 
 ```scala
 val foo = new Foo:
+  val mock$curried$0 = MockFunction2[Int, String, Int](...)
   val mock$oneArg$0 = MockFunction1[Int, Int](...)
-  val mock$twoArgs$1 = MockFunction2[Int, String, String](...)
-  val mock$curried$2 = MockFunction2[Int, String, Int](...)
+  val mock$twoArgs$0 = MockFunction2[Int, String, String](...)
 
   override def oneArg(x: Int): Int =
     mock$oneArg$0.apply(x).asInstanceOf[Int]
     
   override def twoArgs(x: Int, y: String): String =
-    mock$twoArgs$1.apply(x, y).asInstanceOf[String]
+    mock$twoArgs$0.apply(x, y).asInstanceOf[String]
     
   override def curried(x: Int)(y: String): Int =
-    mock$curried$2.apply(x, y).asInstanceOf[Int]
+    mock$curried$0.apply(x, y).asInstanceOf[Int]
 ```
 
 Probably this can be refactored to use internally something more generic, but returning correct type for public API.
