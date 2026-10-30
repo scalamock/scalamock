@@ -25,6 +25,9 @@ import org.scalamock.stubs.{CallLog, Stubs}
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 
+import scala.concurrent.Future
+import scala.util.Success
+
 object DeterministicEmissionFixtures {
   class CollidingSignatureAa
   class CollidingSignatureBB
@@ -41,6 +44,86 @@ object DeterministicEmissionFixtures {
     def alpha(value: String): String
     def collide(value: CollidingSignatureAa): String
     def collide(value: CollidingSignatureBB): String
+  }
+
+  trait MixedValAndMethods {
+    val x: String
+    def x(value: Int): String
+    def x(value: String): String
+  }
+
+  trait MethodBase {
+    def x(value: Int): String
+  }
+
+  trait MethodWithSameNameVal extends MethodBase {
+    val x: String
+  }
+
+  // Future-typed so that new stubs can configure the vals too.
+  trait FutureValBase {
+    val x: Future[Int]
+  }
+
+  trait MethodBesideInheritedVal extends FutureValBase {
+    def x(value: Int): Future[Int]
+  }
+
+  trait FutureMethodBase {
+    def x(value: Int): Future[Int]
+  }
+
+  trait ValBesideInheritedMethod extends FutureMethodBase {
+    val x: Future[Int]
+  }
+
+  trait DefBase {
+    def member: Future[Int]
+  }
+
+  // The val overrides DefBase.member, so lookup through DefBase must still find the val's field.
+  trait ValOverridingDef extends DefBase {
+    override val member: Future[Int]
+    def member(value: Int): Future[Int]
+  }
+
+  trait ValParent {
+    val member: Future[Int]
+  }
+
+  trait DefParent {
+    def member: Future[Int]
+  }
+
+  trait MethodParent {
+    def member(value: Int): Future[Int]
+  }
+
+  // The inherited val implements DefParent.member without overriding it.
+  trait InheritedValAndDef extends DefParent with ValParent
+
+  trait OverridingValAndDef extends DefParent with ValParent {
+    override val member: Future[Int]
+  }
+
+  // Through MethodParent only member(Int) is visible; the val must not take its field.
+  trait ValAndMethodParent extends MethodParent with DefParent {
+    override val member: Future[Int]
+  }
+
+  trait FinalSiblingBase {
+    def f(value: Int): String
+    def f(value: String): String
+  }
+
+  // Through FinalSiblingBase, f(Int) must keep its field when the subclass makes f(String) final.
+  abstract class FinalSiblingDerived extends FinalSiblingBase {
+    final def f(value: String): String = "final"
+  }
+
+  abstract class FinalSiblingWithNullary extends FinalSiblingBase {
+    final def f(value: String): String = "final"
+    def f(): String
   }
 
   trait GeneratedInitializers {
@@ -81,6 +164,138 @@ class DeterministicEmissionBehaviorTest extends AnyFunSpec with MockFactory with
     value.inherited(9L) shouldBe "inherited"
     value.deferredReference shouldBe null
     value.inheritedReference shouldBe null
+  }
+
+  it("separates a deferred val from classic mock methods with the same name") {
+    val value = mock[MixedValAndMethods]
+    (value.x(_: Int)).expects(7).returning("int")
+    (value.x(_: String)).expects("s").returning("string")
+    value.x shouldBe null
+    value.x(7) shouldBe "int"
+    value.x("s") shouldBe "string"
+  }
+
+  it("separates a deferred val from classic stub methods with the same name") {
+    val value = stub[MixedValAndMethods]
+    (value.x(_: Int)).when(7).returns("int")
+    (value.x(_: String)).when("s").returns("string")
+    value.x shouldBe null
+    value.x(7) shouldBe "int"
+    value.x("s") shouldBe "string"
+    value.x(8) shouldBe null
+  }
+
+  it("keeps inherited classic mock lookup through a supertype when a val shares the name") {
+    val derived = mock[MethodWithSameNameVal]
+    val value: MethodBase = derived
+    (value.x(_: Int)).expects(7).returning("base")
+    value.x(7) shouldBe "base"
+    derived.x shouldBe null
+  }
+
+  it("keeps inherited classic stub lookup through a supertype when a val shares the name") {
+    val derived = stub[MethodWithSameNameVal]
+    val value: MethodBase = derived
+    (value.x(_: Int)).when(7).returns("base")
+    value.x(7) shouldBe "base"
+    derived.x shouldBe null
+  }
+
+  it("keeps a classic mock method added beside an inherited val") {
+    val derived = mock[MethodBesideInheritedVal]
+    val base: FutureValBase = derived
+    (derived.x(_: Int)).expects(1).returning(Future.successful(2))
+    base.x shouldBe null
+    derived.x(1).value shouldBe Some(Success(2))
+  }
+
+  it("keeps a classic stub method added beside an inherited val") {
+    val derived = stub[MethodBesideInheritedVal]
+    val base: FutureValBase = derived
+    (derived.x(_: Int)).when(1).returns(Future.successful(2))
+    base.x shouldBe null
+    derived.x(1).value shouldBe Some(Success(2))
+  }
+
+  it("configures a classic mock method through base and derived references when a val is added") {
+    val derived = mock[ValBesideInheritedMethod]
+    val base: FutureMethodBase = derived
+    (base.x(_: Int)).expects(1).returning(Future.successful(2))
+    (derived.x(_: Int)).expects(3).returning(Future.successful(4))
+    derived.x shouldBe null
+    base.x(1).value shouldBe Some(Success(2))
+    derived.x(3).value shouldBe Some(Success(4))
+  }
+
+  it("configures a classic stub val that overrides a parameterless def through either reference") {
+    val derived = stub[ValOverridingDef]
+    val base: DefBase = derived
+    (() => derived.member).when().returns(Future.successful(1))
+    (() => base.member).when().returns(Future.successful(2))
+    (derived.member(_: Int)).when(3).returns(Future.successful(4))
+    derived.member shouldBe null
+    derived.member(3).value shouldBe Some(Success(4))
+  }
+
+  it("configures a classic stub val through both its val and def parents") {
+    val inherited = stub[InheritedValAndDef]
+    (() => (inherited: ValParent).member).when().returns(Future.successful(1))
+    (() => (inherited: DefParent).member).when().returns(Future.successful(2))
+    inherited.member shouldBe null
+
+    val overriding = stub[OverridingValAndDef]
+    (() => (overriding: ValParent).member).when().returns(Future.successful(1))
+    (() => (overriding: DefParent).member).when().returns(Future.successful(2))
+    overriding.member shouldBe null
+  }
+
+  it("keeps a classic stub method from a method-only parent apart from a same-name val") {
+    val derived = stub[ValAndMethodParent]
+    val viaMethod: MethodParent = derived
+    val viaDef: DefParent = derived
+    (viaMethod.member(_: Int)).when(1).returns(Future.successful(2))
+    (() => viaDef.member).when().returns(Future.successful(42))
+    derived.member(1).value shouldBe Some(Success(2))
+    derived.member shouldBe null
+  }
+
+  it("keeps a classic mock method from a method-only parent apart from a same-name val") {
+    val derived = mock[ValAndMethodParent]
+    val viaMethod: MethodParent = derived
+    (viaMethod.member(_: Int)).expects(1).returning(Future.successful(2))
+    derived.member(1).value shouldBe Some(Success(2))
+  }
+
+  it("configures a classic stub method through base and derived references when a val is added") {
+    val derived = stub[ValBesideInheritedMethod]
+    val base: FutureMethodBase = derived
+    (base.x(_: Int)).when(1).returns(Future.successful(2))
+    (derived.x(_: Int)).when(3).returns(Future.successful(4))
+    derived.x shouldBe null
+    base.x(1).value shouldBe Some(Success(2))
+    derived.x(3).value shouldBe Some(Success(4))
+  }
+
+  it("keeps a classic mock method's field when a subclass makes a sibling overload final") {
+    val derived = mock[FinalSiblingDerived]
+    val base: FinalSiblingBase = derived
+    (base.f(_: Int)).expects(1).returning("int")
+    derived.f(1) shouldBe "int"
+    derived.f("s") shouldBe "final"
+  }
+
+  it("keeps a classic stub method's field when a subclass makes a sibling overload final") {
+    val derived = stub[FinalSiblingDerived]
+    val base: FinalSiblingBase = derived
+    (base.f(_: Int)).when(1).returns("int")
+    derived.f(1) shouldBe "int"
+  }
+
+  it("keeps a classic mock method's field when a subclass adds a nullary overload beside a final one") {
+    val derived = mock[FinalSiblingWithNullary]
+    val base: FinalSiblingBase = derived
+    (base.f(_: Int)).expects(1).returning("int")
+    derived.f(1) shouldBe "int"
   }
 
   it("initializes generated stub defaults once in deterministic member order") {
@@ -126,4 +341,105 @@ class DeterministicNewStubBehaviorTest extends AnyFunSpec with Stubs with Matche
     value.inherited.times shouldBe 0
   }
 
+  it("separates a deferred val from new stub methods with the same name") {
+    val value = stub[MixedValAndMethods]
+    (value.x(_: Int)).returns(number => "int" + number)
+    (value.x(_: String)).returns(text => "string" + text)
+    value.x shouldBe null
+    value.x(7) shouldBe "int7"
+    value.x("s") shouldBe "strings"
+    (value.x(_: Int)).times shouldBe 1
+    (value.x(_: String)).times shouldBe 1
+    resetStubs()
+    (value.x(_: Int)).times shouldBe 0
+    (value.x(_: String)).times shouldBe 0
+  }
+
+  it("keeps inherited new stub lookup through a supertype when a val shares the name") {
+    val derived = stub[MethodWithSameNameVal]
+    val value: org.scalamock.stubs.Stub[MethodBase] = derived
+    (value.x(_: Int)).returns(number => "base" + number)
+    value.x(7) shouldBe "base7"
+    (value.x(_: Int)).times shouldBe 1
+    derived.x shouldBe null
+  }
+
+  it("keeps a new stub method added beside an inherited val when the val is configured") {
+    val derived = stub[MethodBesideInheritedVal]
+    val base: org.scalamock.stubs.Stub[FutureValBase] = derived
+    (derived.x(_: Int)).returns(value => Future.successful(value + 1))
+    base.x.returns(_ => Future.successful(42))
+    derived.x.returns(_ => Future.successful(43))
+    derived.x(1).value shouldBe Some(Success(2))
+    (derived.x(_: Int)).times shouldBe 1
+    derived.x shouldBe null
+  }
+
+  it("configures a new stub val that overrides a parameterless def through either reference") {
+    val derived = stub[ValOverridingDef]
+    val base: org.scalamock.stubs.Stub[DefBase] = derived
+    (derived.member(_: Int)).returns(value => Future.successful(value + 1))
+    derived.member.returns(_ => Future.successful(42))
+    base.member.returns(_ => Future.successful(43))
+    derived.member(1).value shouldBe Some(Success(2))
+    (derived.member(_: Int)).times shouldBe 1
+    derived.member shouldBe null
+  }
+
+  it("configures a new stub val through both its val and def parents") {
+    val inherited = stub[InheritedValAndDef]
+    val inheritedViaVal: org.scalamock.stubs.Stub[ValParent] = inherited
+    val inheritedViaDef: org.scalamock.stubs.Stub[DefParent] = inherited
+    inheritedViaVal.member.returns(_ => Future.successful(1))
+    inheritedViaDef.member.returns(_ => Future.successful(2))
+    inherited.member.returns(_ => Future.successful(3))
+    inherited.member shouldBe null
+
+    val overriding = stub[OverridingValAndDef]
+    val overridingViaVal: org.scalamock.stubs.Stub[ValParent] = overriding
+    val overridingViaDef: org.scalamock.stubs.Stub[DefParent] = overriding
+    overridingViaVal.member.returns(_ => Future.successful(1))
+    overridingViaDef.member.returns(_ => Future.successful(2))
+    overriding.member.returns(_ => Future.successful(3))
+    overriding.member shouldBe null
+  }
+
+  it("keeps a new stub method from a method-only parent apart from a same-name val") {
+    val derived = stub[ValAndMethodParent]
+    val viaMethod: org.scalamock.stubs.Stub[MethodParent] = derived
+    val viaDef: org.scalamock.stubs.Stub[DefParent] = derived
+    (viaMethod.member(_: Int)).returns(value => Future.successful(value + 1))
+    viaDef.member.returns(_ => Future.successful(42))
+    derived.member(1).value shouldBe Some(Success(2))
+    (viaMethod.member(_: Int)).times shouldBe 1
+    derived.member shouldBe null
+  }
+
+  it("keeps a new stub method's field when a subclass makes a sibling overload final") {
+    val derived = stub[FinalSiblingDerived]
+    val base: org.scalamock.stubs.Stub[FinalSiblingBase] = derived
+    (base.f(_: Int)).returns(number => "int" + number)
+    derived.f(1) shouldBe "int1"
+    (base.f(_: Int)).times shouldBe 1
+  }
+
+  it("keeps a new stub method's field when a subclass adds a nullary overload beside a final one") {
+    val derived = stub[FinalSiblingWithNullary]
+    val base: org.scalamock.stubs.Stub[FinalSiblingBase] = derived
+    (base.f(_: Int)).returns(number => "int" + number)
+    derived.f(1) shouldBe "int1"
+    (base.f(_: Int)).times shouldBe 1
+  }
+
+  it("keeps an inherited new stub method when a val added beside it is configured") {
+    val derived = stub[ValBesideInheritedMethod]
+    val base: org.scalamock.stubs.Stub[FutureMethodBase] = derived
+    (base.x(_: Int)).returns(value => Future.successful(value + 1))
+    derived.x.returns(_ => Future.successful(42))
+    base.x(1).value shouldBe Some(Success(2))
+    derived.x(2).value shouldBe Some(Success(3))
+    (base.x(_: Int)).times shouldBe 2
+    (derived.x(_: Int)).times shouldBe 2
+    derived.x shouldBe null
+  }
 }

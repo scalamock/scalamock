@@ -114,11 +114,11 @@ class StableMockFieldNamesTest extends AnyFunSpec with MockFactory with Matchers
     classFileFields(value).filter(name => name.startsWith(prefix) && name != "mock$special$mockName")
 
   it("includes user members with internal-looking names") {
-    generatedFields(mock[InternalLookingMemberNames], "mock$") shouldBe List("mock$macro$0", "mock$special$0")
+    generatedFields(mock[InternalLookingMemberNames], "mock$") shouldBe List("mock$macro$nullary", "mock$special$nullary")
   }
 
   private val expectedMemberKeys = List("alpha$0", "alpha$1", "collide$0", "collide$1",
-    "deferredReference$0", "inherited$0", "inheritedReference$0", "zeta$0")
+    "deferredReference$nullary", "inherited$0", "inheritedReference$nullary", "zeta$nullary")
 
   it("emits classic mock fields in deterministic name and overload order") {
     generatedFields(mock[DeterministicEmissionFixtures.Service], "mock$") shouldBe
@@ -128,6 +128,28 @@ class StableMockFieldNamesTest extends AnyFunSpec with MockFactory with Matchers
   it("emits classic stub fields in the same deterministic order") {
     generatedFields(stub[DeterministicEmissionFixtures.Service], "mock$") shouldBe
       expectedMemberKeys.map("mock$" + _)
+  }
+
+  it("names a deferred val's field apart from same-name method indices") {
+    val expected = List("x$nullary", "x$0", "x$1")
+    generatedFields(mock[DeterministicEmissionFixtures.MixedValAndMethods], "mock$") shouldBe
+      expected.map("mock$" + _)
+    generatedFields(stub[DeterministicEmissionFixtures.MixedValAndMethods], "mock$") shouldBe
+      expected.map("mock$" + _)
+    class Factory extends org.scalamock.stubs.Stubs {
+      def instance: AnyRef = stub[DeterministicEmissionFixtures.MixedValAndMethods].asInstanceOf[AnyRef]
+    }
+    generatedFields(new Factory().instance, "stub$") shouldBe expected.map("stub$" + _)
+  }
+
+  it("names a val that overrides a parameterless def without an index, like the def") {
+    val expected = List("member$nullary", "member$0")
+    generatedFields(stub[DeterministicEmissionFixtures.ValOverridingDef], "mock$") shouldBe
+      expected.map("mock$" + _)
+    class Factory extends org.scalamock.stubs.Stubs {
+      def instance: AnyRef = stub[DeterministicEmissionFixtures.ValOverridingDef].asInstanceOf[AnyRef]
+    }
+    generatedFields(new Factory().instance, "stub$") shouldBe expected.map("stub$" + _)
   }
 
   it("emits new stub fields in the same deterministic order") {

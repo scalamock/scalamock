@@ -223,21 +223,26 @@ private[scalamock] class Utils(using val quotes: Quotes):
     private def inTraversalOrder(tpe: TypeRepr): List[MockableDefinition] =
       val methods = tpe.typeSymbol.methodMembers.filter(exclusionReason(_).isEmpty)
 
-      // Number each method among its own overloads, ordered by erased signature, rather than by its
-      // position among all of the type's members. That position follows the compiler's name hashes,
-      // which differ between compiler runs, so a mock class and an expectation compiled in different
-      // runs (incremental compilation, or a mock created in one module and used in another) would
-      // otherwise look for different field names. Overloads of one name can't share an erased signature.
+      val vals = tpe.typeSymbol.fieldMembers.filter(exclusionReason(_).isEmpty)
+      val members = methods ++ vals
+
+      // Within each name, number the members that take parameters by erased signature. Count every
+      // non-private one, including final ones that aren't mocked, so a subclass that makes an overload
+      // final doesn't shift the others. A nullary member is named without an index (see
+      // MockableDefinition), so it doesn't shift them either. Global traversal follows compiler name
+      // hashes, which differ between runs and must not determine a mock class's or expectation's field
+      // names.
       def erasedSignature(sym: Symbol): String =
         val signature = sym.signature
         signature.paramSigs.mkString(",") + ")" + signature.resultSig
-      val overloadIndex: Map[Symbol, Int] =
-        methods.groupBy(_.name).values.flatMap(_.sortBy(erasedSignature).zipWithIndex).toMap
+      val memberIndexInName: Map[Symbol, Int] =
+        tpe.typeSymbol.methodMembers
+          .filterNot(sym => sym.flags.is(Flags.Private) || isNullary(sym))
+          .groupBy(_.name).values
+          .flatMap(_.sortBy(erasedSignature).zipWithIndex)
+          .toMap
 
-      val vals = tpe.typeSymbol.fieldMembers
-        .filter(exclusionReason(_).isEmpty)
-        .map(sym => MockableDefinition(0, sym, tpe))
-      methods.map(sym => MockableDefinition(overloadIndex(sym), sym, tpe)) ++ vals
+      members.map(sym => MockableDefinition(memberIndexInName.get(sym), sym, tpe))
 
     def apply(tpe: TypeRepr): List[MockableDefinition] =
       val definitions = inTraversalOrder(tpe)
@@ -255,9 +260,17 @@ private[scalamock] class Utils(using val quotes: Quotes):
           case other                        => (argTypesAcc.reverse.flatten, other)
       loop(tpe, Nil, TypeRepr.of[Nothing])
 
-  case class MockableDefinition(idx: Int, symbol: Symbol, ownerTpe: TypeRepr):
-    val mockValName = s"mock$$${symbol.name}$$$idx"
-    val stubValName = s"stub$$${symbol.name}$$$idx"
+  // A nullary member has no type or value parameters: val x, def x or def x(). A class has at most one per
+  // name, and overriding keeps it nullary, so naming its field without an index keeps that name the same
+  // through every parent, whether the parent declares a val, a def, or only same-name methods with
+  // parameters. A member with type parameters only, such as def x[A]: A, is numbered like other overloads.
+  private def isNullary(sym: Symbol): Boolean = sym.signature.paramSigs.isEmpty
+
+  // idx is None for a nullary member, which sorts before same-name members that take parameters.
+  case class MockableDefinition(idx: Option[Int], symbol: Symbol, ownerTpe: TypeRepr):
+    private val fieldKey = idx.fold("nullary")(_.toString)
+    val mockValName = s"mock$$${symbol.name}$$$fieldKey"
+    val stubValName = s"stub$$${symbol.name}$$$fieldKey"
     val tpe = ownerTpe.memberType(symbol)
     val (rawTypes, rawResType) = tpe.widen.collectTypes
 

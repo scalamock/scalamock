@@ -26,10 +26,40 @@ For each method in provided definition scalamock generates a `StubbedMethod[Args
 When method is called - scalamock gets corresponding `StubbedMethod` and calls it's `impl` method with provided arguments,
 which updates internal state for each corresponding method.
 
-In Scala 3, each method gets an index within its own name group, numbered by erased signature,
-and a deferred val takes index 0. Adding an unrelated member therefore changes no existing field
-name. Adding another overload can still change a method's index, so configuring a mock through a
+In Scala 3, members that take parameters get an index within their name group, numbered by erased
+signature over every non-private member of that name, including final ones that are not mocked. A
+nullary member has no type or value parameters: `val x`, `def x` or `def x()`. A class has at most
+one per name, and overriding keeps it nullary, so its field takes a `nullary` suffix instead of an
+index (`stub$x$nullary`, `mock$x$nullary`). That name is the same through every parent: one
+declaring a val, one declaring a nullary def, or one declaring only same-name members with
+parameters. A member with type parameters only, such as `def x[A]: A`, is numbered like other
+overloads.
+
+Adding an unrelated member, or a nullary member, therefore changes no existing field name. Adding
+another overload with parameters can still change a method's index, so configuring a mock through a
 supertype whose overloads differ from the mocked class's can reach another member's mock function.
+For example, when a subclass makes the parent's `def x()` final and adds `x(Boolean)`, an
+expectation on `x(Int)` set through the parent reaches `x(Boolean)`. When a subclass of `Repo[Long]`
+overrides `get(Long)` and adds `get()`, an expectation on `get(String)` set through `Repo[Long]`
+reaches `get(Long)`.
+
+These field names are computed twice: when a mock is created and when it is configured. The module
+that creates a mock and the module that configures it must therefore be compiled against the same
+ScalaMock version. The scheme changed in 7.6.2 (indices per name instead of per type) and changes
+again after it (`nullary` fields; nullary defs no longer shift same-name overloads, and final ones
+now count), so a mock compiled against 7.6.2 must be recompiled before newer code configures it.
+Otherwise configuration fails with `NoSuchMethodException`, throws a `ClassCastException` when it
+reaches a mock function of another arity, or silently configures another member: always with the
+new stubs API, whose fields don't record their shape, and with the classic API when the other
+member has the same arity.
+
+Generated field names share the mocked type's member namespace. A member named like a generated
+field (`mock$<name>$<key>` for classic mocks and stubs, `stub$<name>$<key>` for new stubs), or like a
+bookkeeping member such as `mock$special$mockName` or `stubs$macro$clear`, can make generation or
+compilation fail; a private member of that name does not collide. This change moves which names
+collide: `def x()` next to `def stub$x$nullary()` compiled on 7.6.2 and now fails during macro
+expansion, while `def x()` next to `def stub$x$0()` failed on 7.6.2 and now compiles. A
+collision-safe lookup scheme is planned as a follow-up.
 
 For ordinary Scala types, definitions are emitted in member-name/index order. Native Scala.js types
 retain compiler traversal order because their existing JS property dispatcher overwrites earlier
