@@ -138,9 +138,10 @@ class MakerUtils(using override val quotes: Quotes) extends Utils:
   end buildInstance
 
   /**
-   *  Loops through inlined method call to find mocked object and called method name.
-   *  Searches method info (MockableDefinition) through all relevant methods collected from TypeRepr.
-   * 
+   *  Loops through inlined method call to find mocked object and called method.
+   *  The typed Select already refers to the overload the compiler selected, so its symbol
+   *  identifies the MockableDefinition; argument types only validate the function's shape.
+   *
    * @param term initial inlined method call, converted to function via ETA expansion
    * @param argTypes provided function argument types without res type
    * @param appliedTypes collected applied types, when method is generic
@@ -151,7 +152,7 @@ class MakerUtils(using override val quotes: Quotes) extends Utils:
       case Select(apply @ Apply(term, _), "apply") if apply.tpe.isContextFunctionType =>
         searchTermWithMethod(term, argTypes, appliedTypes)
 
-      case Select(mock, methodName) =>
+      case select @ Select(mock, _) =>
         val tpe =
           mock.tpe.widenTermRefByName match
             case AppliedType(tycon, List(typ)) if newApi && tycon =:= TypeRepr.of[Stub] =>
@@ -161,7 +162,7 @@ class MakerUtils(using override val quotes: Quotes) extends Utils:
             case other =>
               other
 
-        val method = MockableDefinitions.find(tpe, methodName, argTypes, appliedTypes.map(_.tpe))
+        val method = MockableDefinitions.find(tpe, select.symbol, argTypes, appliedTypes.map(_.tpe))
         StubWithMethod(mock, method)
 
       case Block(_, Inlined(_, _, Inlined(_, _, term: Select))) =>

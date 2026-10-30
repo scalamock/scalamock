@@ -98,24 +98,48 @@ private[scalamock] class Utils(using val quotes: Quotes):
   object MockableDefinitions:
     private val objectMethods = TypeRepr.of[Object].typeSymbol.methodMembers.toSet
 
-    def find(tpe: TypeRepr, name: String, paramTypes: List[TypeRepr], appliedTypes: List[TypeRepr]): MockableDefinition =
-      MockableDefinitions(tpe)
-        .filter { method =>
-          // should have same name
-          method.symbol.name == name &&
-          // should have same parameter count
-          paramTypes.lengthCompare(method.rawTypes) == 0 &&
-          // only poly should have appliedTypes
-          (method.tpe match {
-            case poly: PolyType => poly.paramTypes.lengthCompare(appliedTypes.length) == 0
-            case _ => appliedTypes.isEmpty
-          }) &&
-            // params with filled ParamRef and few fixes should match
-            paramTypes.zip(method.rawTypes.map(adjustTpe(_, method.tpe, appliedTypes))).forall(_ <:< _)
-        }
+    def find(tpe: TypeRepr, selected: Symbol, paramTypes: List[TypeRepr], appliedTypes: List[TypeRepr]): MockableDefinition =
+      def member =
+        tpe.memberType(selected).widen match
+          case signature @ (_: MethodType | _: PolyType) => s"${selected.name}${signature.show}"
+          case other => s"${selected.name}: ${other.show}"
+      def isReceiverMember =
+        tpe.typeSymbol.methodMembers.contains(selected) || tpe.typeSymbol.fieldMembers.contains(selected)
+      MockableDefinitions(tpe).find(_.symbol == selected) match
+        case Some(definition) if matchesSignature(definition, paramTypes, appliedTypes) =>
+          definition
+        case Some(_) =>
+          report.errorAndAbort(
+            s"Selected member $member of ${tpe.show} does not match the function's parameter types " +
+              paramTypes.map(_.show).mkString("(", ", ", ")")
+          )
+        case None if isReceiverMember =>
+          val reason = exclusionReason(selected).fold("")(reason => s": $reason")
+          report.errorAndAbort(s"Selected member $member of ${tpe.show} is unavailable for mocking$reason")
+        case None =>
+          // The receiver's class doesn't list the selected symbol, as when the receiver is typed through an
+          // opaque alias's bound and the class implements it with another member. Reflection can't ask the
+          // compiler which member that is, so this case keeps the lookup by name and argument types that
+          // predates symbol selection, including its known weakness of binding a related overload.
+          findByArgumentTypes(tpe, selected.name, paramTypes, appliedTypes)
+
+    private def findByArgumentTypes(tpe: TypeRepr, name: String, paramTypes: List[TypeRepr], appliedTypes: List[TypeRepr]): MockableDefinition =
+      inTraversalOrder(tpe)
+        .filter(method => method.symbol.name == name && matchesSignature(method, paramTypes, appliedTypes))
         .sortWith((a, b) => a.rawTypes.zip(b.rawTypes).forall(_ <:< _))
         .headOption
         .getOrElse(report.errorAndAbort(s"Method with such signature not found"))
+
+    private def matchesSignature(method: MockableDefinition, paramTypes: List[TypeRepr], appliedTypes: List[TypeRepr]): Boolean =
+      // should have same parameter count
+      paramTypes.lengthCompare(method.rawTypes) == 0 &&
+        // only poly should have appliedTypes
+        (method.tpe match {
+          case poly: PolyType => poly.paramTypes.lengthCompare(appliedTypes.length) == 0
+          case _ => appliedTypes.isEmpty
+        }) &&
+        // params with filled ParamRef and few fixes should match
+        paramTypes.zip(method.rawTypes.map(adjustTpe(_, method.tpe, appliedTypes))).forall(_ <:< _)
 
     private def adjustTpe(tpe: TypeRepr, methodTpe: TypeRepr, appliedTypes: List[TypeRepr]): TypeRepr =
       def updateParamRefs(tpe: TypeRepr, methodTpe: PolyType): TypeRepr =
@@ -172,34 +196,45 @@ private[scalamock] class Utils(using val quotes: Quotes):
           preprocessed
     end adjustTpe
 
-    def apply(tpe: TypeRepr): List[MockableDefinition] =
-      val methods = tpe.typeSymbol.methodMembers
-        .filter(sym =>
-          !objectMethods.contains(sym) &&
-            !sym.flags.is(Flags.Private) &&
-            !sym.flags.is(Flags.Final) &&
-            !sym.flags.is(Flags.Mutable) &&
-            !sym.flags.is(Flags.Artifact) &&
-            sym.privateWithin.isEmpty &&
-            !sym.name.contains("$default$") &&
-            !sym.hasAnnotation(TypeRepr.of[scala.deprecatedOverriding].typeSymbol)
-        )
+    private def exclusionReason(sym: Symbol): Option[String] =
+      if objectMethods.contains(sym) then Some("it is a java.lang.Object method")
+      else if sym.flags.is(Flags.Private) then Some("it is private")
+      else if sym.flags.is(Flags.Final) then Some("it is final")
+      else if sym.flags.is(Flags.Mutable) then Some("it is mutable")
+      else if sym.flags.is(Flags.Artifact) then Some("it is compiler-generated")
+      else if sym.privateWithin.nonEmpty then Some("it has qualified private or protected visibility")
+      else if sym.name.contains("$default$") then Some("it is a default argument getter")
+      else if sym.hasAnnotation(TypeRepr.of[scala.deprecatedOverriding].typeSymbol) then
+        Some("it is annotated with @deprecatedOverriding")
+      else if sym.isValDef && !sym.flags.is(Flags.Deferred) then Some("it is a concrete val")
+      else None
 
-      // Number each method among its own overloads, ordered by erased signature, rather than by its
-      // position among all of the type's members. That position follows the compiler's name hashes,
-      // which differ between compiler runs, so a mock class and an expectation compiled in different
-      // runs (incremental compilation, or a mock created in one module and used in another) would
-      // otherwise look for different field names. Overloads of one name can't share an erased signature.
+    private def inTraversalOrder(tpe: TypeRepr): List[MockableDefinition] =
+      val methods = tpe.typeSymbol.methodMembers.filter(exclusionReason(_).isEmpty)
+
+      val vals = tpe.typeSymbol.fieldMembers.filter(_.flags.is(Flags.Deferred))
+      val members = methods ++ vals
+
+      // Within each name, number the members that take parameters by erased signature. A parameterless
+      // member is named without an index (see MockableDefinition), so it doesn't shift them. Global
+      // traversal follows compiler name hashes, which differ between runs and must not determine a mock
+      // class's or expectation's field names.
       def erasedSignature(sym: Symbol): String =
         val signature = sym.signature
         signature.paramSigs.mkString(",") + ")" + signature.resultSig
-      val overloadIndex: Map[Symbol, Int] =
-        methods.groupBy(_.name).values.flatMap(_.sortBy(erasedSignature).zipWithIndex).toMap
+      val memberIndexInName: Map[Symbol, Int] =
+        members.filterNot(isParameterless).groupBy(_.name).values
+          .flatMap(_.sortBy(erasedSignature).zipWithIndex)
+          .toMap
 
-      val vals = tpe.typeSymbol.fieldMembers
-        .filter(_.flags.is(Flags.Deferred))
-        .map(sym => MockableDefinition(0, sym, tpe))
-      methods.map(sym => MockableDefinition(overloadIndex(sym), sym, tpe)) ++ vals
+      members.map(sym => MockableDefinition(memberIndexInName.getOrElse(sym, ParameterlessIdx), sym, tpe))
+
+    def apply(tpe: TypeRepr): List[MockableDefinition] =
+      val definitions = inTraversalOrder(tpe)
+      // Native JS overload dispatch currently depends on the final property initializer. Preserve its
+      // traversal until that separate dispatch bug is fixed; ordinary Scala types use one stable list
+      // for both class generation and expectation lookup.
+      if isJsAny(tpe) then definitions else definitions.sortBy(d => (d.symbol.name, d.idx))
 
   extension (tpe: TypeRepr)
     def collectTypes: (List[TypeRepr], TypeRepr) =
@@ -211,9 +246,18 @@ private[scalamock] class Utils(using val quotes: Quotes):
           case other                        => (argTypesAcc.reverse.flatten, other)
       loop(tpe, Nil, TypeRepr.of[Nothing])
 
+  // A class has at most one parameterless member per name (val x, def x or def x()), and overriding keeps
+  // it parameterless. Naming its field without an index keeps that name the same through every parent,
+  // whether the parent declares a val, a def, or only same-name methods that take parameters.
+  private def isParameterless(sym: Symbol): Boolean = sym.signature.paramSigs.isEmpty
+
+  // Sorts a parameterless member before same-name members that take parameters.
+  private val ParameterlessIdx = -1
+
   case class MockableDefinition(idx: Int, symbol: Symbol, ownerTpe: TypeRepr):
-    val mockValName = s"mock$$${symbol.name}$$$idx"
-    val stubValName = s"stub$$${symbol.name}$$$idx"
+    private val fieldKey = if isParameterless(symbol) then "nullary" else idx.toString
+    val mockValName = s"mock$$${symbol.name}$$$fieldKey"
+    val stubValName = s"stub$$${symbol.name}$$$fieldKey"
     val tpe = ownerTpe.memberType(symbol)
     val (rawTypes, rawResType) = tpe.widen.collectTypes
 
