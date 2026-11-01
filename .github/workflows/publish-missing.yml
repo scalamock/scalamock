@@ -19,9 +19,19 @@ jobs:
       - run: git tag -f "v${{ inputs.version }}"
       - uses: actions/setup-java@v4
         with:
-          java-version: 17
-          distribution: 'adopt'
+          java-version: 17.0.21
+          check-latest: true
+          distribution: 'temurin'
           cache: sbt
+      - name: Verify Java trust store
+        shell: bash
+        run: |
+          # Temurin reissued some builds under the same version; reject stale cached stores.
+          certs="$("$JAVA_HOME/bin/keytool" -J-Duser.language=en -list -v -cacerts -storepass changeit)"
+          if printf '%s\n' "$certs" | grep -Ei '^Owner:.*(emSign (ECC Root CA - G3|Root CA - G2)|AAA Certificate Services)' > /dev/null; then
+            echo "Compromised eMudhra trust path remains in the JDK" >&2
+            exit 1
+          fi
       - uses: sbt/setup-sbt@v1
       # Only scalamock-scalatest, scalamock-specs2-4 and scalamock-specs2-5 are
       # published here: every other module already exists on Maven Central under
