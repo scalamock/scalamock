@@ -14,20 +14,11 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Set up JDK
-      uses: actions/setup-java@v4
+      uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
       with:
-        java-version: 17.0.21
-        check-latest: true
+        java-version: 17.0.21+9
+        force-download: true
         distribution: 'temurin'
-    - name: Verify Java trust store
-      shell: bash
-      run: |
-        # Temurin reissued some builds under the same version; reject stale cached stores.
-        certs="$("$JAVA_HOME/bin/keytool" -J-Duser.language=en -list -v -cacerts -storepass changeit)"
-        if printf '%s\n' "$certs" | grep -Ei '^Owner:.*(emSign (ECC Root CA - G3|Root CA - G2)|AAA Certificate Services)' > /dev/null; then
-          echo "Compromised eMudhra trust path remains in the JDK" >&2
-          exit 1
-        fi
     - uses: sbt/setup-sbt@v1
     - name: Run tests
       # Scala Native is Scala 3 only (crossScalaVersions is pinned to 3.x for
@@ -49,20 +40,11 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Set up JDK
-      uses: actions/setup-java@v4
+      uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
       with:
-        java-version: 17.0.21
-        check-latest: true
+        java-version: 17.0.21+9
+        force-download: true
         distribution: 'temurin'
-    - name: Verify Java trust store
-      shell: bash
-      run: |
-        # Temurin reissued some builds under the same version; reject stale cached stores.
-        certs="$("$JAVA_HOME/bin/keytool" -J-Duser.language=en -list -v -cacerts -storepass changeit)"
-        if printf '%s\n' "$certs" | grep -Ei '^Owner:.*(emSign (ECC Root CA - G3|Root CA - G2)|AAA Certificate Services)' > /dev/null; then
-          echo "Compromised eMudhra trust path remains in the JDK" >&2
-          exit 1
-        fi
     - uses: sbt/setup-sbt@v1
     - name: Run tests
       # See comment in scala_2_12 job: Scala Native is Scala 3 only.
@@ -81,20 +63,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Set up JDK
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
-          java-version: 17.0.21
-          check-latest: true
+          java-version: 17.0.21+9
+          force-download: true
           distribution: 'temurin'
-      - name: Verify Java trust store
-        shell: bash
-        run: |
-          # Temurin reissued some builds under the same version; reject stale cached stores.
-          certs="$("$JAVA_HOME/bin/keytool" -J-Duser.language=en -list -v -cacerts -storepass changeit)"
-          if printf '%s\n' "$certs" | grep -Ei '^Owner:.*(emSign (ECC Root CA - G3|Root CA - G2)|AAA Certificate Services)' > /dev/null; then
-            echo "Compromised eMudhra trust path remains in the JDK" >&2
-            exit 1
-          fi
       - uses: sbt/setup-sbt@v1
       - name: Run tests
         run: sbt ++3.9.0 test

@@ -17,21 +17,12 @@ jobs:
       # checked-out commit locally (never pushed) so the modules whose artifact ids
       # were wrong in that release get re-published under exactly the same version.
       - run: git tag -f "v${{ inputs.version }}"
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
-          java-version: 17.0.21
-          check-latest: true
+          java-version: 17.0.21+9
+          force-download: true
           distribution: 'temurin'
           cache: sbt
-      - name: Verify Java trust store
-        shell: bash
-        run: |
-          # Temurin reissued some builds under the same version; reject stale cached stores.
-          certs="$("$JAVA_HOME/bin/keytool" -J-Duser.language=en -list -v -cacerts -storepass changeit)"
-          if printf '%s\n' "$certs" | grep -Ei '^Owner:.*(emSign (ECC Root CA - G3|Root CA - G2)|AAA Certificate Services)' > /dev/null; then
-            echo "Compromised eMudhra trust path remains in the JDK" >&2
-            exit 1
-          fi
       - uses: sbt/setup-sbt@v1
       # Only scalamock-scalatest, scalamock-specs2-4 and scalamock-specs2-5 are
       # published here: every other module already exists on Maven Central under

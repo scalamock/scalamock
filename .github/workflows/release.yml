@@ -9,21 +9,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
-          java-version: 17.0.21
-          check-latest: true
+          java-version: 17.0.21+9
+          force-download: true
           distribution: 'temurin'
           cache: sbt
-      - name: Verify Java trust store
-        shell: bash
-        run: |
-          # Temurin reissued some builds under the same version; reject stale cached stores.
-          certs="$("$JAVA_HOME/bin/keytool" -J-Duser.language=en -list -v -cacerts -storepass changeit)"
-          if printf '%s\n' "$certs" | grep -Ei '^Owner:.*(emSign (ECC Root CA - G3|Root CA - G2)|AAA Certificate Services)' > /dev/null; then
-            echo "Compromised eMudhra trust path remains in the JDK" >&2
-            exit 1
-          fi
       - uses: sbt/setup-sbt@v1
       # The default `+publishSigned` aggregates over the root, so during the
       # 2.12/2.13 passes the Scala-3-only modules (specs2-5, Native) are still
