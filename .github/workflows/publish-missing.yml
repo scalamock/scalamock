@@ -17,10 +17,11 @@ jobs:
       # checked-out commit locally (never pushed) so the modules whose artifact ids
       # were wrong in that release get re-published under exactly the same version.
       - run: git tag -f "v${{ inputs.version }}"
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
-          java-version: 17
-          distribution: 'adopt'
+          java-version: 17.0.21+9
+          force-download: true
+          distribution: 'temurin'
           cache: sbt
       - uses: sbt/setup-sbt@v1
       # Only scalamock-scalatest, scalamock-specs2-4 and scalamock-specs2-5 are

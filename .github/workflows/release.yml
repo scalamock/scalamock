@@ -9,10 +9,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
-          java-version: 17
-          distribution: 'adopt'
+          java-version: 17.0.21+9
+          force-download: true
+          distribution: 'temurin'
           cache: sbt
       - uses: sbt/setup-sbt@v1
       # The default `+publishSigned` aggregates over the root, so during the
