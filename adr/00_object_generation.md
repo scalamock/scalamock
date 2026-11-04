@@ -26,24 +26,78 @@ For each method in provided definition scalamock generates a `StubbedMethod[Args
 When method is called - scalamock gets corresponding `StubbedMethod` and calls it's `impl` method with provided arguments,
 which updates internal state for each corresponding method.
 
-Each method has a unique index of method from provided definition. The order depends on compiler.
+In Scala 3, members that take parameters get an index within their name group, numbered by erased
+signature over every non-private member of that name, including final ones that are not mocked. A
+nullary member has no type or value parameters: `val x`, `def x` or `def x()`. A class has at most
+one per name, and overriding keeps it nullary, so its field takes a `nullary` suffix instead of an
+index (`stub$x$nullary`, `mock$x$nullary`). That name is the same through every parent: one
+declaring a val, one declaring a nullary def, or one declaring only same-name members with
+parameters. A member with type parameters only, such as `def x[A]: A`, is numbered like other
+overloads.
+
+Adding an unrelated member, or a nullary member, therefore changes no existing field name. Adding
+another overload with parameters can still change a method's index, so configuring a mock through a
+supertype whose overloads differ from the mocked class's can reach another member's mock function.
+For example, when a subclass makes the parent's `def x()` final and adds `x(Boolean)`, an
+expectation on `x(Int)` set through the parent reaches `x(Boolean)`. When a subclass of `Repo[Long]`
+overrides `get(Long)` and adds `get()`, an expectation on `get(String)` set through `Repo[Long]`
+reaches `get(Long)`.
+
+These field names are computed twice: when a mock is created and when it is configured. The module
+that creates a mock and the module that configures it must therefore be compiled against the same
+ScalaMock version. The scheme changed in 7.6.2 (indices per name instead of per type) and changes
+again after it (`nullary` fields; nullary defs no longer shift same-name overloads, and final ones
+now count), so a mock compiled against 7.6.2 must be recompiled before newer code configures it.
+Otherwise configuration fails with `NoSuchMethodException`, throws a `ClassCastException` when it
+reaches a mock function of another arity, or silently configures another member: always with the
+new stubs API, whose fields don't record their shape, and with the classic API when the other
+member has the same arity.
+
+Generated field names share the mocked type's member namespace. A member named like a generated
+field (`mock$<name>$<key>` for classic mocks and stubs, `stub$<name>$<key>` for new stubs), or like a
+bookkeeping member such as `mock$special$mockName` or `stubs$macro$clear`, can make generation or
+compilation fail; a private member of that name does not collide. This change moves which names
+collide: `def x()` next to `def stub$x$nullary()` compiled on 7.6.2 and now fails during macro
+expansion, while `def x()` next to `def stub$x$0()` failed on 7.6.2 and now compiles. A
+collision-safe lookup scheme is planned as a follow-up.
+
+For ordinary Scala types, definitions are emitted in member-name/index order. Native Scala.js types
+retain compiler traversal order because their existing JS property dispatcher overwrites earlier
+overloads; fixing that dispatch is separate from deterministic member emission. The examples below
+use the Scala 3 naming scheme.
+
+Expectations and stub configuration use the overload the compiler already selected in
+`(m.foo(_: A))` or `m.foo`. When that symbol is one of the receiver's mockable definitions, it is
+used directly, independent of emission order. When it is a member of the receiver that cannot be
+mocked, such as a `final` overload, configuration is a compile error rather than a binding to a
+sibling. A function configured for a selected definition must still cover its full
+parameter list, with each argument type conforming to its parameter: a function that drops a
+`using` or defaulted parameter, fixes an argument, or relies on widening is a compile error: the
+macro checks the configured function against the selected method's parameters.
+
+The receiver's class may not list the selected symbol at all, for example when the receiver is
+typed through an opaque alias's bound and the class implements the method with an override or
+with a member inherited from another parent. Then the same-name member whose type, as seen from the
+receiver, equals the selection's is used; a sibling overload cannot share that type. If no member
+has exactly that type, the earlier lookup by name and argument types runs, and it can bind a
+related overload when argument types do not tell the overloads apart.
 
 If there are multiple arguments - scalamock tuples them.
 
 ```scala
 val foo = new Foo:
+  val stub$curried$0 = StubbedMethod[Any, Any](...)
   val stub$oneArg$0 = StubbedMethod[Any, Any](...)
-  val stub$twoArgs$1 = StubbedMethod[Any, Any](...)
-  val stub$curried$2 = StubbedMethod[Any, Any](...)
+  val stub$twoArgs$0 = StubbedMethod[Any, Any](...)
   
   override def oneArg(x: Int): Int =
-    stub$foo$0.impl(x).asInstanceOf[Int]
+    stub$oneArg$0.impl(x).asInstanceOf[Int]
     
   override def twoArgs(x: Int, y: String): String =
-    stub$twoArgs$1.impl((x, y)).asInstanceOf[String]
+    stub$twoArgs$0.impl((x, y)).asInstanceOf[String]
     
   override def curried(x: Int)(y: String): Int =
-    stub$curried$2.impl((x, y)).asInstanceOf[Int]
+    stub$curried$0.impl((x, y)).asInstanceOf[Int]
 ```
 
 Note that internally scalamock stores `StubbedMethod[Args, Result]` as `StubbedMethod[Any, Any]` to simplify object generation.
@@ -67,7 +121,7 @@ Example:
 
 ### Ability to reset a stub
 
-Each stub generates a `stub$macro$clear()` method that clears all recorded calls and results.
+Each stub generates a `stubs$macro$clear()` method that clears all recorded calls and results.
 
 It calls `clear()` method on each `StubbedMethod`.
 
@@ -77,10 +131,10 @@ In such case your test cases should run sequentially.
 
 ```scala
 val foo = new Foo:
-  def stub$macro$clear(): Unit =
+  def stubs$macro$clear(): Unit =
+    stub$curried$0.clear()
     stub$oneArg$0.clear()
-    stub$twoArgs$1.clear()
-    stub$curried$2.clear()
+    stub$twoArgs$0.clear()
 ```
 
 ## Classic
@@ -101,18 +155,18 @@ So internally it looks like this:
 
 ```scala
 val foo = new Foo:
+  val mock$curried$0 = MockFunction2[Int, String, Int](...)
   val mock$oneArg$0 = MockFunction1[Int, Int](...)
-  val mock$twoArgs$1 = MockFunction2[Int, String, String](...)
-  val mock$curried$2 = MockFunction2[Int, String, Int](...)
+  val mock$twoArgs$0 = MockFunction2[Int, String, String](...)
 
   override def oneArg(x: Int): Int =
     mock$oneArg$0.apply(x).asInstanceOf[Int]
     
   override def twoArgs(x: Int, y: String): String =
-    mock$twoArgs$1.apply(x, y).asInstanceOf[String]
+    mock$twoArgs$0.apply(x, y).asInstanceOf[String]
     
   override def curried(x: Int)(y: String): Int =
-    mock$curried$2.apply(x, y).asInstanceOf[Int]
+    mock$curried$0.apply(x, y).asInstanceOf[Int]
 ```
 
 Probably this can be refactored to use internally something more generic, but returning correct type for public API.
